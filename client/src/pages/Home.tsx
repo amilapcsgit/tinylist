@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '@/components/Layout';
 import { ListCard } from '@/components/ListCard';
 import { useStore, LIST_COLORS, COLOR_MAP, ListColor } from '@/lib/store';
-import { Plus, X, ArrowUpAZ, ArrowDown01, MoreVertical } from 'lucide-react';
+import { Plus, X, ArrowUpAZ, ArrowDown01, MoreVertical, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -16,12 +16,13 @@ export default function Home() {
   const lists = useStore(state => state.lists);
   const items = useStore(state => state.items);
   const addList = useStore(state => state.addList);
-  const reorderLists = useStore(state => state.reorderLists);
+  const undo = useStore(state => state.undo);
+  const history = useStore(state => state.history);
   
   const [isCreating, setIsCreating] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
   const [newListColor, setNewListColor] = useState<ListColor>('green');
-  const [sortMode, setSortMode] = useState<'az' | 'manual'>('manual');
+  const [sortMode, setSortMode] = useState<'az' | 'manual' | 'completion'>('manual');
 
   // Computed: Get item counts per list
   const getListStats = (listId: string) => {
@@ -43,6 +44,13 @@ export default function Home() {
 
   const sortedLists = [...lists].sort((a, b) => {
     if (sortMode === 'az') return a.title.localeCompare(b.title);
+    if (sortMode === 'completion') {
+        const statsA = getListStats(a.id);
+        const statsB = getListStats(b.id);
+        const ratioA = statsA.total ? statsA.completed / statsA.total : 0;
+        const ratioB = statsB.total ? statsB.completed / statsB.total : 0;
+        return ratioB - ratioA; // Most completed first
+    }
     return a.order - b.order;
   });
 
@@ -50,22 +58,36 @@ export default function Home() {
     <Layout 
       title="NEON LISTS"
       actions={
-        <DropdownMenu>
-          <DropdownMenuTrigger className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none">
-            <MoreVertical className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-card border-white/10 text-foreground">
-            <DropdownMenuItem onClick={() => setSortMode('az')}>
-              <ArrowUpAZ className="w-4 h-4 mr-2" /> Sort A-Z
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortMode('manual')}>
-               <ArrowDown01 className="w-4 h-4 mr-2" /> Manual Order
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          {history.length > 0 && (
+              <button 
+                onClick={undo}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-neon-yellow"
+                title="Undo"
+              >
+                  <RotateCcw className="w-5 h-5" />
+              </button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none">
+              <MoreVertical className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card border-white/10 text-foreground">
+              <DropdownMenuItem onClick={() => setSortMode('az')}>
+                <ArrowUpAZ className="w-4 h-4 mr-2" /> Sort A-Z
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortMode('completion')}>
+                 <ArrowDown01 className="w-4 h-4 mr-2" /> Sort by Completion
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortMode('manual')}>
+                 <ArrowDown01 className="w-4 h-4 mr-2" /> Manual Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       }
     >
-      <div className="p-4 flex flex-col gap-2">
+      <div className="flex flex-col">
         {/* List Rows */}
         <AnimatePresence>
           {sortedLists.map(list => {
@@ -96,7 +118,7 @@ export default function Home() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-card/50 border border-white/10 rounded-lg p-4 overflow-hidden"
+              className="bg-card/50 border-t border-b border-white/10 p-4 overflow-hidden"
             >
               <form onSubmit={handleCreate} className="flex flex-col gap-4">
                 <input

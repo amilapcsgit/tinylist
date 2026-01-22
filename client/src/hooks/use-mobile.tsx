@@ -17,3 +17,30 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+// Simple useLongPress hook
+export function useLongPress(callback: () => void, ms = 500) {
+  const [startLongPress, setStartLongPress] = React.useState(false);
+  const timeout = React.useRef<NodeJS.Timeout>();
+
+  React.useEffect(() => {
+    if (startLongPress) {
+      timeout.current = setTimeout(() => {
+        callback();
+        setStartLongPress(false);
+      }, ms);
+    } else {
+      clearTimeout(timeout.current);
+    }
+
+    return () => clearTimeout(timeout.current);
+  }, [callback, ms, startLongPress]);
+
+  return {
+    onMouseDown: () => setStartLongPress(true),
+    onMouseUp: () => setStartLongPress(false),
+    onMouseLeave: () => setStartLongPress(false),
+    onTouchStart: () => setStartLongPress(true),
+    onTouchEnd: () => setStartLongPress(false),
+  };
+}
