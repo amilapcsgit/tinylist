@@ -149,49 +149,67 @@ export default function Home() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-card/50 border-t border-b border-white/10 p-4 overflow-hidden"
+              className="bg-card/90 border-t border-b border-white/10 overflow-hidden"
             >
-              <form onSubmit={handleCreate} className="flex flex-col gap-4">
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="LIST TITLE"
-                  className="bg-transparent border-b border-white/20 p-2 text-xl font-display text-white placeholder:text-white/20 focus:outline-none focus:border-primary transition-colors"
-                  value={newListTitle}
-                  onChange={e => setNewListTitle(e.target.value)}
-                />
-                
-                <div className="flex gap-2 flex-wrap justify-between">
+              {/* Visual color selection preview like TinyApp */}
+              <div 
+                className="w-full h-12 transition-colors duration-300"
+                style={{ backgroundColor: COLOR_MAP[newListColor] }}
+              >
+                <div className="h-full flex items-center px-4 justify-between">
+                   <span className="text-white font-display text-sm tracking-widest uppercase opacity-70">New List</span>
+                   <span className="text-white font-ui text-sm">0/0</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col">
+                {/* 10 Colors Grid (TinyApp style) */}
+                <div className="grid grid-cols-5 gap-0">
                   {LIST_COLORS.map(color => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => setNewListColor(color)}
                       className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-all duration-200 hover:scale-110",
-                        newListColor === color ? "border-white scale-110 shadow-[0_0_10px_currentColor]" : "border-transparent opacity-50 hover:opacity-100"
+                        "aspect-square transition-all duration-200 relative",
+                        newListColor === color ? "z-10" : "hover:opacity-80"
                       )}
-                      style={{ backgroundColor: COLOR_MAP[color], color: COLOR_MAP[color] }}
-                    />
+                      style={{ backgroundColor: COLOR_MAP[color] }}
+                    >
+                      {newListColor === color && (
+                        <div className="absolute inset-0 border-4 border-white z-20" />
+                      )}
+                    </button>
                   ))}
                 </div>
 
-                <div className="flex justify-end gap-2 mt-2">
-                  <button 
-                    type="button"
-                    onClick={() => setIsCreating(false)}
-                    className="px-4 py-2 text-sm font-ui text-muted-foreground hover:text-white transition-colors"
-                  >
-                    CANCEL
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-6 py-2 bg-primary/20 hover:bg-primary/40 text-primary border border-primary/50 rounded-md font-display text-sm tracking-wider transition-all hover:box-glow"
-                  >
-                    CREATE
-                  </button>
-                </div>
-              </form>
+                <form onSubmit={handleCreate} className="p-4 bg-background">
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="LIST TITLE"
+                    className="w-full bg-black/40 border border-white/10 p-4 text-xl font-display text-white placeholder:text-white/20 focus:outline-none focus:border-primary transition-colors"
+                    value={newListTitle}
+                    onChange={e => setNewListTitle(e.target.value)}
+                  />
+
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button 
+                      type="button"
+                      onClick={() => setIsCreating(false)}
+                      className="px-6 py-2 text-sm font-ui text-muted-foreground hover:text-white transition-colors"
+                    >
+                      CANCEL
+                    </button>
+                    <button 
+                      type="submit"
+                      className="px-10 py-3 bg-primary text-black font-display font-bold text-sm tracking-wider transition-all hover:bg-primary/80"
+                    >
+                      CREATE
+                    </button>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

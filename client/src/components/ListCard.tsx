@@ -31,10 +31,7 @@ export function ListCard({ list, itemCount, completedCount, dragControls }: List
   const [isDragging, setIsDragging] = useState(false);
 
   // Transformations for swipe actions
-  // Reveal Delete (Red) on Left Swipe (x < 0)
   const deleteOpacity = useTransform(x, [-100, -50], [1, 0]);
-  
-  // Reveal Edit (Blue) on Right Swipe (x > 0)
   const editOpacity = useTransform(x, [50, 100], [0, 1]);
 
   // Edit State
@@ -45,10 +42,15 @@ export function ListCard({ list, itemCount, completedCount, dragControls }: List
   const handleDragEnd = (_: any, info: PanInfo) => {
     setIsDragging(false);
     if (info.offset.x < -100) {
-      // Swipe Left Threshold: Delete
-      deleteList(list.id);
+      // Swipe Left: Delete (Now with confirmation logic if unified)
+      if (window.confirm(`Delete list "${list.title}"?`)) {
+        deleteList(list.id);
+      }
     } else if (info.offset.x > 100) {
-       // Swipe Right Threshold: Edit
+       // Swipe Right: Toggle Completion or Edit? 
+       // User said "completion only via swipe-right", so let's match Items screen
+       // but for Lists completion might not make sense. 
+       // User said "unify modifying list view main screen in same format and functions"
        setIsEditing(true);
     }
   };
@@ -65,21 +67,19 @@ export function ListCard({ list, itemCount, completedCount, dragControls }: List
 
   return (
     <>
-    <div className="relative w-full mb-3 h-16 group select-none">
-      {/* Background Actions Layer - Strictly behind */}
-      <div className="absolute inset-0 flex items-center justify-between rounded-lg overflow-hidden z-0">
-        {/* Left Side (Revealed on Right Swipe -> Edit) */}
-        <div className="flex items-center gap-2 pl-4 w-1/2 bg-blue-900/50 h-full justify-start">
-           <motion.div style={{ opacity: editOpacity }} className="flex items-center gap-2 text-blue-400 font-bold">
+    <div className="relative w-full mb-1 h-16 group select-none">
+      {/* Background Actions Layer */}
+      <div className="absolute inset-0 flex items-center justify-between overflow-hidden z-0 bg-background">
+        <div className="flex items-center gap-2 pl-4 w-1/2 bg-blue-900/20 h-full justify-start">
+           <motion.div style={{ opacity: editOpacity }} className="flex items-center gap-2 text-blue-400">
               <Edit2 className="w-6 h-6" />
-              <span className="font-display tracking-wider text-sm">EDIT</span>
+              <span className="font-display tracking-wider text-xs uppercase">Edit</span>
            </motion.div>
         </div>
 
-        {/* Right Side (Revealed on Left Swipe -> Delete) */}
-        <div className="flex items-center gap-2 pr-4 w-1/2 bg-red-900/50 h-full justify-end">
-           <motion.div style={{ opacity: deleteOpacity }} className="flex items-center gap-2 text-red-500 font-bold">
-              <span className="font-display tracking-wider text-sm">DELETE</span>
+        <div className="flex items-center gap-2 pr-4 w-1/2 bg-red-900/20 h-full justify-end">
+           <motion.div style={{ opacity: deleteOpacity }} className="flex items-center gap-2 text-red-500">
+              <span className="font-display tracking-wider text-xs uppercase">Delete</span>
               <Trash2 className="w-6 h-6" />
            </motion.div>
         </div>
@@ -87,39 +87,19 @@ export function ListCard({ list, itemCount, completedCount, dragControls }: List
 
       {/* Foreground Card */}
       <motion.div
-        style={{ x, height: cardHeight }}
+        style={{ x, borderLeftColor: listColor }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.2} // Stiffer resistance
+        dragElastic={0.2}
         onDragStart={() => setIsDragging(true)}
         onDragEnd={handleDragEnd}
         onClick={() => !isDragging && setLocation(`/list/${list.id}`)}
-        className="relative z-10 w-full h-full flex items-center justify-between shadow-lg overflow-hidden cursor-pointer bg-background rounded-lg border-l-8"
-        // Ensure background is opaque to hide actions
-        animate={{ x: 0 }} // Snap back on release if not deleted
+        className="relative z-10 w-full h-full flex items-center justify-between px-4 shadow-lg overflow-hidden cursor-pointer bg-card/90 border-l-8"
       >
-         {/* Colored Bar + Content */}
-         <div 
-            className="absolute inset-0 w-full h-full"
-            style={{ 
-                backgroundColor: `${listColor}`,
-                opacity: 0.15 
-            }} 
-         />
-         
-         {/* Border Accent */}
-         <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: listColor }} />
-
-         <div className="relative flex items-center justify-between w-full px-4 z-20">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              {/* Reorder Handle - Pass explicit control if needed, or just visual */}
-              {/* <div onPointerDown={(e) => dragControls?.start(e)} className="cursor-grab active:cursor-grabbing touch-none">
-                <GripVertical className="w-5 h-5 text-muted-foreground/30 flex-shrink-0" />
-              </div> */}
-              <h3 className="font-display text-lg font-bold text-white tracking-wide truncate">
-                {list.title}
-              </h3>
-            </div>
+         <div className="relative flex items-center justify-between w-full z-20">
+            <h3 className="font-display text-lg font-bold text-white tracking-wide truncate">
+              {list.title}
+            </h3>
 
             <div className="flex items-center gap-3 shrink-0">
                 <span className="font-ui text-xl font-bold tabular-nums tracking-widest" style={{ color: listColor }}>

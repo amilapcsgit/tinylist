@@ -170,41 +170,64 @@ export default function ListDetail() {
 
         {/* Add Item Dialog */}
         <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
-            <DialogContent className="bg-card border-white/10 text-white w-[90%] rounded-xl">
-                <DialogHeader>
-                    <DialogTitle className="font-display text-primary">New Item</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAddItem} className="flex flex-col gap-6 mt-2">
-                    <input 
-                        autoFocus
-                        placeholder="Item text (e.g. Milk 2.50)"
-                        value={newItemText}
-                        onChange={(e) => setNewItemText(e.target.value)}
-                        className="w-full bg-black/20 border border-white/10 rounded p-3 font-ui text-lg text-white focus:outline-none focus:border-primary"
-                    />
-                    
-                    <div className="space-y-2">
-                        <label className="text-xs font-ui text-muted-foreground uppercase">Color</label>
-                        <div className="flex flex-wrap gap-3">
-                            {LIST_COLORS.map(color => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    onClick={() => setNewItemColor(color)}
-                                    className={cn(
-                                        "w-8 h-8 rounded-full border-2 transition-all",
-                                        newItemColor === color ? "border-white scale-110 shadow-[0_0_10px_currentColor]" : "border-transparent opacity-50"
-                                    )}
-                                    style={{ backgroundColor: COLOR_MAP[color], color: COLOR_MAP[color] }}
-                                />
-                            ))}
-                        </div>
+            <DialogContent className="bg-card border-white/10 text-white w-full max-w-md rounded-none p-0 overflow-hidden">
+                <div 
+                  className="w-full h-16 transition-colors duration-300"
+                  style={{ backgroundColor: COLOR_MAP[newItemColor] }}
+                >
+                  <div className="h-full flex items-center px-6 justify-between">
+                     <span className="text-white font-display text-lg tracking-widest uppercase opacity-80">New Item</span>
+                     <X className="w-6 h-6 cursor-pointer" onClick={() => setIsAddingItem(false)} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                    {/* 10 Colors Grid */}
+                    <div className="grid grid-cols-5 gap-0">
+                        {LIST_COLORS.map(color => (
+                            <button
+                                key={color}
+                                type="button"
+                                onClick={() => setNewItemColor(color)}
+                                className={cn(
+                                    "aspect-square transition-all duration-200 relative",
+                                    newItemColor === color ? "z-10" : "hover:opacity-80"
+                                )}
+                                style={{ backgroundColor: COLOR_MAP[color] }}
+                            >
+                                {newItemColor === color && (
+                                    <div className="absolute inset-0 border-4 border-white z-20" />
+                                )}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex justify-end gap-2">
-                         <button type="submit" className="px-6 py-2 bg-primary text-black font-bold rounded font-display tracking-wider">ADD</button>
-                    </div>
-                </form>
+                    <form onSubmit={handleAddItem} className="p-6 bg-background">
+                        <input 
+                            autoFocus
+                            placeholder="What needs to be done?"
+                            value={newItemText}
+                            onChange={(e) => setNewItemText(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 p-4 font-ui text-xl text-white focus:outline-none focus:border-primary"
+                        />
+                        
+                        <div className="flex justify-end gap-3 mt-8">
+                             <button 
+                                type="button"
+                                onClick={() => setIsAddingItem(false)}
+                                className="px-6 py-2 text-sm text-muted-foreground font-bold"
+                             >
+                                CANCEL
+                             </button>
+                             <button 
+                                type="submit" 
+                                className="px-10 py-3 bg-primary text-black font-bold font-display tracking-wider"
+                             >
+                                ADD ITEM
+                             </button>
+                        </div>
+                    </form>
+                </div>
             </DialogContent>
         </Dialog>
 
