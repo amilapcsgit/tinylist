@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { motion, PanInfo, useMotionValue } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import { TodoItem, useStore } from '@/lib/store';
 import { Trash2, Edit2, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,23 +28,25 @@ export function TaskItem({
   const deleteItem = useStore(state => state.deleteItem);
   const duplicateItem = useStore(state => state.duplicateItem);
   const x = useMotionValue(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Transformations for swipe actions
+  const deleteOpacity = useTransform(x, [-100, -50], [1, 0]);
+  const editOpacity = useTransform(x, [50, 100], [0, 1]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x < -80) {
+    setIsDragging(false);
+    if (info.offset.x < -100) {
       // Swipe Left: Delete
       deleteItem(item.id);
-    } else if (info.offset.x > 80) {
-      if (info.offset.y > 30) {
-          // Swipe Right + Down (approx): Duplicate
-          duplicateItem(item.id);
-      } else {
-          // Swipe Right: Edit
-          onEdit(item);
-      }
+    } else if (info.offset.x > 100) {
+      // Swipe Right: Edit
+      onEdit(item);
     }
   };
 
   const handleClick = () => {
+      if (isDragging) return;
       if (isSelectionMode) {
           onToggleSelection(item.id);
       } else {
@@ -52,14 +54,13 @@ export function TaskItem({
       }
   };
 
-  // Simple long press detection
+  // Explicit Long Press for Selection Mode
   const timeoutRef = useRef<NodeJS.Timeout>(undefined);
 
   const handleTouchStart = () => {
       timeoutRef.current = setTimeout(() => {
           if (!isSelectionMode) {
             onEnterSelectionMode(item.id);
-            // Vibrate if available
             if (navigator.vibrate) navigator.vibrate(50);
           }
       }, 500);
@@ -70,35 +71,38 @@ export function TaskItem({
   };
 
   return (
-    <motion.div
-      layout
-      style={{ x }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      onDragEnd={handleDragEnd}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleTouchStart} // For mouse users testing
-      onMouseUp={handleTouchEnd}
-      className="relative w-full mb-1 group touch-pan-y"
-    >
+    <div className="relative w-full mb-1 group select-none">
       {/* Background Actions */}
-      <div className="absolute inset-0 flex items-center justify-between px-4 rounded-md overflow-hidden bg-background">
-        <div className="flex items-center gap-2 text-neon-blue font-bold">
-             <Edit2 className="w-5 h-5" />
+      <div className="absolute inset-0 flex items-center justify-between px-4 overflow-hidden bg-background">
+        <div className="flex items-center gap-2 text-blue-400 font-bold bg-blue-900/20 w-1/2 h-full justify-start pl-4">
+             <motion.div style={{ opacity: editOpacity }}>
+                <Edit2 className="w-5 h-5" />
+             </motion.div>
         </div>
-        <div className="flex items-center gap-2 text-destructive font-bold">
-             <Trash2 className="w-5 h-5" />
+        <div className="flex items-center gap-2 text-red-500 font-bold bg-red-900/20 w-1/2 h-full justify-end pr-4">
+             <motion.div style={{ opacity: deleteOpacity }}>
+                <Trash2 className="w-5 h-5" />
+             </motion.div>
         </div>
       </div>
 
       {/* Content */}
       <motion.div 
-        className={cn(
-            "relative z-10 flex items-center gap-3 p-3 rounded-none border-b border-white/5 bg-card backdrop-blur-sm transition-colors duration-200",
-            isSelected && "bg-white/10 border-primary/30" // Selection highlight
-        )}
+        style={{ x }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={handleDragEnd}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
         onClick={handleClick}
+        className={cn(
+            "relative z-10 flex items-center gap-3 p-3 border-b border-white/5 bg-card backdrop-blur-sm transition-colors duration-200",
+            isSelected && "bg-primary/10 border-primary/30" // Selection highlight
+        )}
       >
         {/* Selection / Checkbox */}
         <div 
@@ -126,11 +130,7 @@ export function TaskItem({
         >
             {item.text}
         </span>
-
-        {/* Drag Handle (visible in reorder mode, but let's just show it subtly) */}
-        {/* <GripVertical className="w-4 h-4 text-muted-foreground/20" /> */}
-
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

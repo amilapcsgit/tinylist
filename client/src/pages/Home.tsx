@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Layout } from '@/components/Layout';
 import { ListCard } from '@/components/ListCard';
-import { useStore, LIST_COLORS, COLOR_MAP, ListColor } from '@/lib/store';
-import { Plus, X, ArrowUpAZ, ArrowDown01, MoreVertical, RotateCcw } from 'lucide-react';
+import { useStore, LIST_COLORS, COLOR_MAP, ListColor, TodoList } from '@/lib/store';
+import { Plus, ArrowUpAZ, ArrowDown01, MoreVertical, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ export default function Home() {
   const lists = useStore(state => state.lists);
   const items = useStore(state => state.items);
   const addList = useStore(state => state.addList);
+  const reorderLists = useStore(state => state.reorderLists);
   const undo = useStore(state => state.undo);
   const history = useStore(state => state.history);
   
@@ -42,6 +43,7 @@ export default function Home() {
     }
   };
 
+  // Sort logic
   const sortedLists = [...lists].sort((a, b) => {
     if (sortMode === 'az') return a.title.localeCompare(b.title);
     if (sortMode === 'completion') {
@@ -49,10 +51,22 @@ export default function Home() {
         const statsB = getListStats(b.id);
         const ratioA = statsA.total ? statsA.completed / statsA.total : 0;
         const ratioB = statsB.total ? statsB.completed / statsB.total : 0;
-        return ratioB - ratioA; // Most completed first
+        return ratioB - ratioA;
     }
     return a.order - b.order;
   });
+
+  const handleReorder = (newOrder: TodoList[]) => {
+      // Only allow reorder in manual mode
+      if (sortMode === 'manual') {
+          // Update orders
+          const updatedLists = newOrder.map((list, index) => ({
+              ...list,
+              order: index
+          }));
+          reorderLists(updatedLists);
+      }
+  };
 
   return (
     <Layout 
@@ -87,21 +101,38 @@ export default function Home() {
         </div>
       }
     >
-      <div className="flex flex-col">
-        {/* List Rows */}
-        <AnimatePresence>
-          {sortedLists.map(list => {
-            const stats = getListStats(list.id);
-            return (
-              <ListCard 
-                key={list.id} 
-                list={list} 
-                itemCount={stats.total}
-                completedCount={stats.completed}
-              />
-            );
-          })}
-        </AnimatePresence>
+      <div className="flex flex-col pb-24">
+        {/* Lists with Reorder Support */}
+        {sortMode === 'manual' ? (
+             <Reorder.Group axis="y" values={sortedLists} onReorder={handleReorder} className="flex flex-col">
+                {sortedLists.map(list => {
+                    const stats = getListStats(list.id);
+                    return (
+                    <Reorder.Item key={list.id} value={list} dragListener={true}>
+                        <ListCard 
+                            list={list} 
+                            itemCount={stats.total}
+                            completedCount={stats.completed}
+                        />
+                    </Reorder.Item>
+                    );
+                })}
+             </Reorder.Group>
+        ) : (
+            <div className="flex flex-col">
+                {sortedLists.map(list => {
+                    const stats = getListStats(list.id);
+                    return (
+                        <ListCard 
+                            key={list.id} 
+                            list={list} 
+                            itemCount={stats.total}
+                            completedCount={stats.completed}
+                        />
+                    );
+                })}
+            </div>
+        )}
 
         {/* Empty State */}
         {lists.length === 0 && !isCreating && (
