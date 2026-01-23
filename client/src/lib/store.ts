@@ -24,6 +24,7 @@ export interface TodoItem {
   listId: string;
   text: string;
   isDone: boolean;
+  color: ListColor; // Added item-specific color
   createdAt: number;
 }
 
@@ -46,18 +47,18 @@ interface StoreState {
   reorderLists: (newOrder: TodoList[]) => void;
   
   // Item Actions
-  addItem: (listId: string, text: string, position?: 'top' | 'bottom') => void;
+  addItem: (listId: string, text: string, color: ListColor, position?: 'top' | 'bottom') => void;
   toggleItem: (itemId: string) => void;
-  updateItem: (itemId: string, text: string) => void;
+  updateItem: (itemId: string, updates: Partial<TodoItem>) => void;
   deleteItem: (itemId: string) => void;
   clearCompleted: (listId: string) => void;
-  reorderItems: (newItems: TodoItem[]) => void; // Simple reorder for now
+  reorderItems: (newItems: TodoItem[]) => void;
   
   // Undo/Redo support
   history: {
     type: 'list' | 'item';
     action: 'delete' | 'complete' | 'edit';
-    data: any; // Snapshot of data before change
+    data: any;
     timestamp: number;
   }[];
   
@@ -66,8 +67,6 @@ interface StoreState {
   
   duplicateList: (listId: string) => void;
   duplicateItem: (itemId: string) => void;
-  
-  // Selection Mode (Local UI state really, but maybe helpful here? No, keep in component)
 }
 
 export const useStore = create<StoreState>()(
@@ -79,20 +78,20 @@ export const useStore = create<StoreState>()(
         { id: '3', title: 'Ideas', color: 'cyan', createdAt: Date.now(), order: 2 },
       ],
       items: [
-        { id: '101', listId: '1', text: 'Welcome to NeonList', isDone: false, createdAt: Date.now() },
-        { id: '102', listId: '1', text: 'Swipe right to edit', isDone: false, createdAt: Date.now() },
-        { id: '103', listId: '1', text: 'Swipe left to delete', isDone: true, createdAt: Date.now() },
-        { id: '104', listId: '2', text: 'Milk 2.50', isDone: false, createdAt: Date.now() },
-        { id: '105', listId: '2', text: 'Bread 1.20', isDone: false, createdAt: Date.now() },
+        { id: '101', listId: '1', text: 'Welcome to NeonList', isDone: false, color: 'red', createdAt: Date.now() },
+        { id: '102', listId: '1', text: 'Swipe right to edit', isDone: false, color: 'blue', createdAt: Date.now() },
+        { id: '103', listId: '1', text: 'Swipe left to delete', isDone: true, color: 'green', createdAt: Date.now() },
+        { id: '104', listId: '2', text: 'Milk 2.50', isDone: false, color: 'green', createdAt: Date.now() },
+        { id: '105', listId: '2', text: 'Bread 1.20', isDone: false, color: 'orange', createdAt: Date.now() },
       ],
       
       history: [],
-      lastDeletedList: null, // Deprecated in favor of history, keeping for now to avoid breaking if referenced
+      lastDeletedList: null,
       lastDeletedItems: null,
       lastDeletedItem: null,
 
       addToHistory: (entry) => set((state) => ({
-        history: [...state.history.slice(-10), { ...entry, timestamp: Date.now() }] // Keep last 10 actions
+        history: [...state.history.slice(-10), { ...entry, timestamp: Date.now() }]
       })),
 
       undo: () => set((state) => {
@@ -150,7 +149,6 @@ export const useStore = create<StoreState>()(
         const itemsToDelete = state.items.filter(i => i.listId === id);
         if (!listToDelete) return state;
 
-        // Add to history
         const newHistory = [...state.history.slice(-10), {
             type: 'list' as const,
             action: 'delete' as const,
@@ -167,12 +165,13 @@ export const useStore = create<StoreState>()(
 
       reorderLists: (newOrder) => set({ lists: newOrder }),
 
-      addItem: (listId, text, position = 'bottom') => set((state) => {
+      addItem: (listId, text, color, position = 'bottom') => set((state) => {
         const newItem = {
           id: nanoid(),
           listId,
           text,
           isDone: false,
+          color,
           createdAt: Date.now()
         };
         return {
@@ -182,21 +181,12 @@ export const useStore = create<StoreState>()(
         };
       }),
 
-      toggleItem: (itemId) => set((state) => {
-          const item = state.items.find(i => i.id === itemId);
-          if (!item) return state;
-          
-          // Optional: Add toggle to history if we want to undo completions?
-          // For now, let's keep history for destructive actions mostly, but user asked for "Undo".
-          // Let's stick to destructive for now to keep it simple, or add it.
-          
-          return {
-            items: state.items.map(i => i.id === itemId ? { ...i, isDone: !i.isDone } : i)
-          };
-      }),
+      toggleItem: (itemId) => set((state) => ({
+        items: state.items.map(i => i.id === itemId ? { ...i, isDone: !i.isDone } : i)
+      })),
 
-      updateItem: (itemId, text) => set((state) => ({
-        items: state.items.map(i => i.id === itemId ? { ...i, text } : i)
+      updateItem: (itemId, updates) => set((state) => ({
+        items: state.items.map(i => i.id === itemId ? { ...i, ...updates } : i)
       })),
 
       deleteItem: (itemId) => set((state) => {
@@ -216,22 +206,17 @@ export const useStore = create<StoreState>()(
         };
       }),
 
-      clearCompleted: (listId) => set((state) => {
-         // This is a bulk delete, might be hard to undo with simple history logic above without grouping.
-         // For now, let's just do it.
-         return {
-            items: state.items.filter(i => !(i.listId === listId && i.isDone))
-         };
-      }),
+      clearCompleted: (listId) => set((state) => ({
+        items: state.items.filter(i => !(i.listId === listId && i.isDone))
+      })),
       
       reorderItems: (newItems) => set((state) => {
         const otherItems = state.items.filter(i => !newItems.find(ni => ni.id === i.id));
         return { items: [...otherItems, ...newItems] };
       }),
 
-      restoreLastDeletedList: () => get().undo(), // Alias for backward compatibility if needed
-
-      restoreLastDeletedItem: () => get().undo(), // Alias
+      restoreLastDeletedList: () => get().undo(),
+      restoreLastDeletedItem: () => get().undo(),
       
       duplicateList: (listId) => set((state) => {
         const originalList = state.lists.find(l => l.id === listId);
@@ -270,7 +255,6 @@ export const useStore = create<StoreState>()(
               createdAt: Date.now()
           };
           
-          // Insert right after original
           const index = state.items.findIndex(i => i.id === itemId);
           const newItems = [...state.items];
           newItems.splice(index + 1, 0, newItem);
