@@ -1,44 +1,45 @@
-# TinyList (NeonList) — Android Revival
+# TinyList (NeonList) - Android Revival
 
-A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app, rebuilt with a cyber‑neon UI, new gesture controls, offline-first storage, and safer data handling.
+A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app, rebuilt with a cyber-neon UI, new gesture controls, offline-first storage, and safer data handling.
 
 ## What It Is
-- **Classic list manager feel**, updated for Android 12+.
-- **Neon/cyberpunk interface** inspired by the original tiny-list style.
-- **Offline-first**: data stays on-device.
-- **Modern UX**: swipe gestures, selection sum, quick search, export.
+- Classic list manager feel, updated for Android 12+.
+- Neon/cyberpunk interface inspired by the original tiny-list style.
+- Offline-first: data stays on-device.
+- Modern UX: swipe gestures, selection sum, quick search, export.
 
 ## Core Features
 - Create, edit, delete lists and items
 - Manual reorder of lists
 - Swipe:
-  - **Right** on item → edit
-  - **Left** on item → delete
-  - **Double‑tap** item → mark done
-- Selection mode with **numeric sum** from item text
+  - Right on item -> edit
+  - Left on item -> delete
+  - Double-tap item -> mark done
+- Selection mode with numeric sum from item text
 - Search across lists/items
 - Export JSON backup
 
 ## Safety & Privacy
-- **No network calls**: data is stored locally with Room.
-- **Exports are explicit** and require user action (Storage Access Framework).
-- **No analytics** or background uploads.
+- No network calls: data is stored locally with Room.
+- Exports are explicit and require user action (Storage Access Framework).
+- No analytics or background uploads.
 
 ## Project Layout
-- `android/` — Native Android app (Compose, Room)
-- `source/` — Original web app source (preserved for reference)
-- `docs/screenshots/` — App screenshots used in this README
+- `android/` - Native Android app (Compose, Room)
+- `source/` - Original web app source (preserved for reference)
+- `docs/screenshots/` - App screenshots used in this README
 
 ## Screenshots
 ![Home screen](docs/screenshots/home.jpg)
-![List detail](docs/screenshots/list-detail.png)
-![Home alt](docs/screenshots/home-alt.jpg)
-![List detail alt](docs/screenshots/detail-alt.jpg)
-![Menu alt](docs/screenshots/menu-alt.jpg)
-![Legacy reference](docs/screenshots/legacy-reference.jpg)
+![List detail](docs/screenshots/list-detail.jpg)
+![Menu](docs/screenshots/menu.jpg)
+![Extra 1](docs/screenshots/extra-1.jpg)
+![Extra 2](docs/screenshots/extra-2.jpg)
+![Extra 3](docs/screenshots/extra-3.jpg)
+![Extra 4](docs/screenshots/extra-4.jpg)
 
 ## Getting Started (Contributors)
-1. Install **JDK 17** and **Android Studio**.
+1. Install JDK 17 and Android Studio.
 2. Open the `android/` folder in Android Studio and let Gradle sync.
 3. Run the `app` configuration on an Android 12+ emulator/device.
 4. If you change UI code, run:
@@ -49,8 +50,8 @@ A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app
 
 ## Build & Run
 ### Requirements
-- **JDK 17**
-- **Android Studio** (recommended)
+- JDK 17
+- Android Studio (recommended)
 - Android SDK (compileSdk 34, minSdk 31)
 
 ### Build (CLI)
