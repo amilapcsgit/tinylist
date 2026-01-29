@@ -2,17 +2,19 @@ import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type ListColor = 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'cyan' | 'orange' | 'pink';
+export type ListColor = 'red' | 'orange' | 'yellow' | 'lime' | 'green' | 'teal' | 'cyan' | 'blue' | 'purple' | 'pink';
 
 export const LIST_COLORS: ListColor[] = [
-  'red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'pink'
+  'red', 'orange', 'yellow', 'lime', 'green', 'teal', 'cyan', 'blue', 'purple', 'pink'
 ];
 
 export const COLOR_MAP: Record<ListColor, string> = {
   red: 'var(--neon-red)',
   orange: 'var(--neon-orange)',
   yellow: 'var(--neon-yellow)',
+  lime: 'var(--neon-lime)',
   green: 'var(--neon-green)',
+  teal: 'var(--neon-teal)',
   cyan: 'var(--neon-cyan)',
   blue: 'var(--neon-blue)',
   purple: 'var(--neon-purple)',

@@ -5,6 +5,7 @@ import { ListCard } from '@/components/ListCard';
 import { useStore, LIST_COLORS, COLOR_MAP, ListColor, TodoList } from '@/lib/store';
 import { Plus, ArrowUpAZ, ArrowDown01, MoreVertical, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLongPress } from '@/hooks/use-mobile';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,16 +58,20 @@ export default function Home() {
   });
 
   const handleReorder = (newOrder: TodoList[]) => {
-      // Only allow reorder in manual mode
-      if (sortMode === 'manual') {
-          // Update orders
-          const updatedLists = newOrder.map((list, index) => ({
-              ...list,
-              order: index
-          }));
-          reorderLists(updatedLists);
-      }
+    if (sortMode === 'manual') {
+      const updatedLists = newOrder.map((list, index) => ({
+        ...list,
+        order: index
+      }));
+      reorderLists(updatedLists);
+    }
   };
+
+  // Explicit long press to open creator
+  const longPressProps = useLongPress(() => {
+    setIsCreating(true);
+    if (navigator.vibrate) navigator.vibrate(50);
+  });
 
   return (
     <Layout 
@@ -101,7 +106,10 @@ export default function Home() {
         </div>
       }
     >
-      <div className="flex flex-col pb-24">
+      <div 
+        className="flex flex-col pb-24 min-h-[calc(100vh-64px)]"
+        {...longPressProps}
+      >
         {/* Lists with Reorder Support */}
         {sortMode === 'manual' ? (
              <Reorder.Group axis="y" values={sortedLists} onReorder={handleReorder} className="flex flex-col">

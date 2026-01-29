@@ -58,9 +58,6 @@ export default function ListDetail() {
       return { sum, count, isSelectionMode };
   }, [listItems, selectedIds]);
 
-  if (!list) return null;
-  const listColor = COLOR_MAP[list.color];
-
   const toggleSelection = (id: string) => {
       const newSet = new Set(selectedIds);
       if (newSet.has(id)) newSet.delete(id);
@@ -81,6 +78,26 @@ export default function ListDetail() {
       if (isDeletingItem) {
           deleteItem(isDeletingItem.id);
           setIsDeletingItem(null);
+      }
+  };
+
+  if (!list) return null;
+  const listColor = COLOR_MAP[list.color];
+
+  const enterSelectionMode = (id: string) => {
+      setSelectedIds(new Set([id]));
+  };
+
+  const longPressProps = useLongPress(() => {
+    setIsAddingItem(true);
+    if (navigator.vibrate) navigator.vibrate(50);
+  });
+
+  const handleEditItem = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (editingItem && editingItem.text.trim()) {
+          updateItem(editingItem.id, { text: editingItem.text.trim() });
+          setEditingItem(null);
       }
   };
 
@@ -109,7 +126,10 @@ export default function ListDetail() {
     >
         <div className="h-1 w-full shadow-[0_0_15px_currentColor]" style={{ backgroundColor: listColor, color: listColor }} />
 
-        <div className="pb-32">
+        <div 
+          className="pb-32 min-h-[calc(100vh-64px)]"
+          {...longPressProps}
+        >
             <div className="mt-2 flex flex-col">
                 {listItems.map(item => (
                     <TaskItem 

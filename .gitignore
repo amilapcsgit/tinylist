@@ -1,6 +1,20 @@
-node_modules
-dist
+.gradle/
+.idea/
+.vscode/
+*.iml
+*.log
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+
+# Android
+android/.gradle/
+android/.idea/
+android/**/build/
+android/**/out/
+android/local.properties
+android/.kotlin/
+
+# Node/old source
+source/node_modules/
+source/dist/
+source/.env
