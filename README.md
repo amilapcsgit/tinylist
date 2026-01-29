@@ -30,13 +30,9 @@ A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app
 - `docs/screenshots/` - App screenshots used in this README
 
 ## Screenshots
-![Home screen](docs/screenshots/home.jpg)
-![List detail](docs/screenshots/list-detail.jpg)
-![Menu](docs/screenshots/menu.jpg)
-![Extra 1](docs/screenshots/extra-1.jpg)
-![Extra 2](docs/screenshots/extra-2.jpg)
-![Extra 3](docs/screenshots/extra-3.jpg)
-![Extra 4](docs/screenshots/extra-4.jpg)
+![Home screen](docs/screenshots/home.png)
+![List detail](docs/screenshots/list-detail.png)
+![Menu](docs/screenshots/menu.png)
 
 ## Getting Started (Contributors)
 1. Install JDK 17 and Android Studio.

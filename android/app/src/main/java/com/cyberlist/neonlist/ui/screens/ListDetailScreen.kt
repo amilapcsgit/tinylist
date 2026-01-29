@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -41,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,6 +82,7 @@ fun ListDetailScreen(
   var deleteTarget by remember { mutableStateOf<ItemEntity?>(null) }
   var editTarget by remember { mutableStateOf<ItemEntity?>(null) }
   var editText by remember { mutableStateOf("") }
+  var editColor by remember { mutableStateOf("green") }
 
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItems, selectedIds)
@@ -92,16 +95,22 @@ fun ListDetailScreen(
       NeonIconButton(onClick = { menuOpen = true }, label = "Menu") {
         Icon(Icons.Filled.MoreVert, contentDescription = "Menu", tint = NeonMutedForeground)
       }
-      DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-        DropdownMenuItem(text = { Text("Clear Selection") }, onClick = {
+      DropdownMenu(
+        expanded = menuOpen,
+        onDismissRequest = { menuOpen = false },
+        modifier = Modifier
+          .background(NeonCard)
+          .clip(RoundedCornerShape(16.dp))
+      ) {
+        DropdownMenuItem(text = { Text("Clear Selection", color = Color.White) }, onClick = {
           menuOpen = false
           selectedIds = emptySet()
         })
-        DropdownMenuItem(text = { Text("Clear Completed") }, onClick = {
+        DropdownMenuItem(text = { Text("Clear Completed", color = Color.White) }, onClick = {
           menuOpen = false
           viewModel.clearCompleted(list.id)
         })
-        DropdownMenuItem(text = { Text("Duplicate List") }, onClick = {
+        DropdownMenuItem(text = { Text("Duplicate List", color = Color.White) }, onClick = {
           menuOpen = false
           viewModel.duplicateList(list.id)
         })
@@ -142,6 +151,7 @@ fun ListDetailScreen(
               onEdit = {
                 editTarget = item
                 editText = item.text
+                editColor = item.color
               },
               onDelete = { deleteTarget = item }
             )
@@ -262,29 +272,33 @@ fun ListDetailScreen(
       textContentColor = Color.White,
       title = { Text("Edit Item", style = MaterialTheme.typography.titleLarge) },
       text = {
-        OutlinedTextField(
-          value = editText,
-          onValueChange = { editText = it },
-          placeholder = { Text("Update item text") },
-          modifier = Modifier.fillMaxWidth(),
-          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = NeonPrimary,
-            unfocusedBorderColor = NeonMutedForeground,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedPlaceholderColor = NeonMutedForeground,
-            unfocusedPlaceholderColor = NeonMutedForeground,
-            cursorColor = NeonPrimary
+        Column {
+          ColorGrid(selected = editColor, onSelect = { editColor = it })
+          Spacer(modifier = Modifier.height(12.dp))
+          OutlinedTextField(
+            value = editText,
+            onValueChange = { editText = it },
+            placeholder = { Text("Update item text") },
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+            colors = OutlinedTextFieldDefaults.colors(
+              focusedBorderColor = NeonPrimary,
+              unfocusedBorderColor = NeonMutedForeground,
+              focusedTextColor = Color.White,
+              unfocusedTextColor = Color.White,
+              focusedPlaceholderColor = NeonMutedForeground,
+              unfocusedPlaceholderColor = NeonMutedForeground,
+              cursorColor = NeonPrimary
+            )
           )
-        )
+        }
       },
       confirmButton = {
         androidx.compose.material3.Button(
           onClick = {
             val trimmed = editText.trim()
             if (trimmed.isNotEmpty()) {
-              editTarget?.let { viewModel.updateItem(it.copy(text = trimmed)) }
+              editTarget?.let { viewModel.updateItem(it.copy(text = trimmed, color = editColor)) }
               editTarget = null
             }
           },

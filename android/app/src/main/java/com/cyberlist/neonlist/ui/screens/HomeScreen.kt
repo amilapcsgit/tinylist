@@ -1,10 +1,5 @@
 package com.cyberlist.neonlist.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,7 +28,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -62,14 +60,13 @@ import com.cyberlist.neonlist.ui.NeonBackground
 import com.cyberlist.neonlist.ui.NeonCard
 import com.cyberlist.neonlist.ui.NeonBorder
 import com.cyberlist.neonlist.ui.NeonColorMap
+import com.cyberlist.neonlist.ui.NeonCard
 import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
-import com.cyberlist.neonlist.ui.components.NeonPrimaryButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
-import com.cyberlist.neonlist.ui.components.NeonTextButton
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.ReorderableLazyListState
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
@@ -211,58 +208,6 @@ fun HomeScreen(
           }
         }
 
-        AnimatedVisibility(
-          visible = isCreating,
-          enter = fadeIn() + expandVertically(),
-          exit = fadeOut() + shrinkVertically()
-        ) {
-          Column(
-            modifier = Modifier
-              .fillMaxWidth()
-              .background(NeonBackground.copy(alpha = 0.9f))
-          ) {
-            val previewColor = NeonColorMap[newColor] ?: NeonPrimary
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .background(previewColor)
-                .padding(horizontal = 16.dp),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Text("New List", color = Color.White, style = MaterialTheme.typography.labelSmall)
-              Text("0/0", color = Color.White, style = MaterialTheme.typography.bodySmall)
-            }
-
-            ColorGrid(selected = newColor, onSelect = { newColor = it })
-
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-              OutlinedTextField(
-                value = newTitle,
-                onValueChange = { newTitle = it },
-                placeholder = { Text("LIST TITLE", color = NeonMutedForeground) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-              )
-
-              Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                horizontalArrangement = Arrangement.End
-              ) {
-                NeonTextButton(text = "CANCEL", onClick = { isCreating = false })
-                Spacer(modifier = Modifier.width(12.dp))
-                NeonPrimaryButton(text = "CREATE") {
-                  if (newTitle.trim().isNotEmpty()) {
-                    viewModel.addList(newTitle.trim(), newColor)
-                    newTitle = ""
-                    isCreating = false
-                  }
-                }
-              }
-            }
-          }
-        }
       }
 
       FloatingActionButton(
@@ -285,6 +230,23 @@ fun HomeScreen(
       onSave = { updated ->
         viewModel.updateList(updated)
         editTarget = null
+      }
+    )
+  }
+
+  if (isCreating) {
+    AddListDialog(
+      title = newTitle,
+      color = newColor,
+      onTitleChange = { newTitle = it },
+      onColorChange = { newColor = it },
+      onDismiss = { isCreating = false },
+      onSave = {
+        if (newTitle.trim().isNotEmpty()) {
+          viewModel.addList(newTitle.trim(), newColor)
+          newTitle = ""
+          isCreating = false
+        }
       }
     )
   }
@@ -425,28 +387,109 @@ private fun EditListDialog(
 
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
-    title = { Text("Edit List", color = NeonPrimary) },
+    containerColor = NeonCard,
+    titleContentColor = NeonPrimary,
+    textContentColor = Color.White,
+    title = { Text("Edit List", style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
         OutlinedTextField(
           value = title,
           onValueChange = { title = it },
           label = { Text("Title") },
-          modifier = Modifier.fillMaxWidth()
+          modifier = Modifier.fillMaxWidth(),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = NeonPrimary,
+            unfocusedBorderColor = NeonMutedForeground,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedLabelColor = NeonPrimary,
+            unfocusedLabelColor = NeonMutedForeground,
+            focusedPlaceholderColor = NeonMutedForeground,
+            unfocusedPlaceholderColor = NeonMutedForeground,
+            cursorColor = NeonPrimary
+          )
         )
         Spacer(modifier = Modifier.height(12.dp))
         ColorGrid(selected = color, onSelect = { color = it })
       }
     },
     confirmButton = {
-      NeonPrimaryButton(text = "SAVE") {
-        if (title.trim().isNotEmpty()) {
-          onSave(list.copy(title = title.trim(), color = color))
-        }
+      androidx.compose.material3.Button(
+        onClick = {
+          if (title.trim().isNotEmpty()) {
+            onSave(list.copy(title = title.trim(), color = color))
+          }
+        },
+        colors = ButtonDefaults.buttonColors(
+          containerColor = NeonPrimary,
+          contentColor = Color.Black
+        )
+      ) {
+        Text("SAVE", style = MaterialTheme.typography.titleMedium)
       }
     },
     dismissButton = {
-      NeonTextButton(text = "CANCEL", onClick = onDismiss)
+      TextButton(onClick = onDismiss) {
+        Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+      }
+    }
+  )
+}
+
+@Composable
+private fun AddListDialog(
+  title: String,
+  color: String,
+  onTitleChange: (String) -> Unit,
+  onColorChange: (String) -> Unit,
+  onDismiss: () -> Unit,
+  onSave: () -> Unit
+) {
+  androidx.compose.material3.AlertDialog(
+    onDismissRequest = onDismiss,
+    containerColor = NeonCard,
+    titleContentColor = NeonPrimary,
+    textContentColor = Color.White,
+    title = { Text("New List", style = MaterialTheme.typography.titleLarge) },
+    text = {
+      Column {
+        ColorGrid(selected = color, onSelect = onColorChange)
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+          value = title,
+          onValueChange = onTitleChange,
+          placeholder = { Text("LIST TITLE") },
+          modifier = Modifier.fillMaxWidth(),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = NeonPrimary,
+            unfocusedBorderColor = NeonMutedForeground,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            focusedPlaceholderColor = NeonMutedForeground,
+            unfocusedPlaceholderColor = NeonMutedForeground,
+            cursorColor = NeonPrimary
+          )
+        )
+      }
+    },
+    confirmButton = {
+      androidx.compose.material3.Button(
+        onClick = onSave,
+        colors = ButtonDefaults.buttonColors(
+          containerColor = NeonPrimary,
+          contentColor = Color.Black
+        )
+      ) {
+        Text("CREATE", style = MaterialTheme.typography.titleMedium)
+      }
+    },
+    dismissButton = {
+      TextButton(onClick = onDismiss) {
+        Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+      }
     }
   )
 }
