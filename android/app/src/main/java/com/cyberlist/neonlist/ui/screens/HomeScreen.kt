@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -371,11 +372,12 @@ private fun ListCard(
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .height(72.dp)
+          .height(76.dp)
           .background(NeonCard)
-          .clip(RoundedCornerShape(18.dp))
+          .clip(RoundedCornerShape(20.dp))
+          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
           .padding(horizontal = 18.dp)
-          .shadow(8.dp, RoundedCornerShape(18.dp))
+          .shadow(10.dp, RoundedCornerShape(20.dp))
           .clickable { onOpen() },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -394,16 +396,22 @@ private fun ListCard(
             color = Color.White
           )
         }
-        Text(
-          "${completedCount}/${itemCount}",
-          color = color,
-          style = MaterialTheme.typography.titleLarge
-        )
+        Box(
+          modifier = Modifier
+            .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+          Text(
+            "${completedCount}/${itemCount}",
+            color = color,
+            style = MaterialTheme.typography.titleMedium
+          )
+        }
       }
     }
   )
 
-  Spacer(modifier = Modifier.height(4.dp))
+  Spacer(modifier = Modifier.height(10.dp))
 }
 
 @Composable

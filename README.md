@@ -32,6 +32,9 @@ A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app
 ## Screenshots
 ![Home screen](docs/screenshots/home.jpg)
 ![List detail](docs/screenshots/list-detail.png)
+![Home alt](docs/screenshots/home-alt.jpg)
+![List detail alt](docs/screenshots/detail-alt.jpg)
+![Menu alt](docs/screenshots/menu-alt.jpg)
 ![Legacy reference](docs/screenshots/legacy-reference.jpg)
 
 ## Getting Started (Contributors)
