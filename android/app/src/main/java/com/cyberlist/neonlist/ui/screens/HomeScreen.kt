@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -56,6 +58,7 @@ import com.cyberlist.neonlist.AppViewModel
 import com.cyberlist.neonlist.SortMode
 import com.cyberlist.neonlist.data.ListEntity
 import com.cyberlist.neonlist.ui.NeonBackground
+import com.cyberlist.neonlist.ui.NeonCard
 import com.cyberlist.neonlist.ui.NeonBorder
 import com.cyberlist.neonlist.ui.NeonColorMap
 import com.cyberlist.neonlist.ui.NeonPrimary
@@ -126,19 +129,34 @@ fun HomeScreen(
       NeonIconButton(onClick = { sortMenuOpen = true }, label = "Sort") {
         Icon(Icons.Filled.MoreVert, contentDescription = "Sort", tint = NeonMutedForeground)
       }
-      DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
-        DropdownMenuItem(text = { Text("Sort A-Z") }, onClick = {
-          sortMenuOpen = false
-          viewModel.setSortMode(SortMode.AZ)
-        })
-        DropdownMenuItem(text = { Text("Sort by Completion") }, onClick = {
-          sortMenuOpen = false
-          viewModel.setSortMode(SortMode.COMPLETION)
-        })
-        DropdownMenuItem(text = { Text("Manual Order") }, onClick = {
-          sortMenuOpen = false
-          viewModel.setSortMode(SortMode.MANUAL)
-        })
+      DropdownMenu(
+        expanded = sortMenuOpen,
+        onDismissRequest = { sortMenuOpen = false },
+        modifier = Modifier
+          .background(NeonCard)
+          .clip(RoundedCornerShape(16.dp))
+      ) {
+        DropdownMenuItem(
+          text = { Text("Sort A-Z", color = Color.White) },
+          onClick = {
+            sortMenuOpen = false
+            viewModel.setSortMode(SortMode.AZ)
+          }
+        )
+        DropdownMenuItem(
+          text = { Text("Sort by Completion", color = Color.White) },
+          onClick = {
+            sortMenuOpen = false
+            viewModel.setSortMode(SortMode.COMPLETION)
+          }
+        )
+        DropdownMenuItem(
+          text = { Text("Manual Order", color = Color.White) },
+          onClick = {
+            sortMenuOpen = false
+            viewModel.setSortMode(SortMode.MANUAL)
+          }
+        )
       }
     }
   ) {
@@ -353,10 +371,11 @@ private fun ListCard(
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .height(64.dp)
-          .background(NeonSecondary.copy(alpha = 0.9f))
-          .padding(horizontal = 16.dp)
-          .shadow(6.dp)
+          .height(72.dp)
+          .background(NeonCard)
+          .clip(RoundedCornerShape(18.dp))
+          .padding(horizontal = 18.dp)
+          .shadow(8.dp, RoundedCornerShape(18.dp))
           .clickable { onOpen() },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -371,14 +390,14 @@ private fun ListCard(
           Spacer(modifier = Modifier.width(12.dp))
           Text(
             list.title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             color = Color.White
           )
         }
         Text(
           "${completedCount}/${itemCount}",
           color = color,
-          style = MaterialTheme.typography.titleMedium
+          style = MaterialTheme.typography.titleLarge
         )
       }
     }
