@@ -6,6 +6,9 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,7 +25,12 @@ import com.cyberlist.neonlist.ui.screens.SettingsScreen
 fun NeonListApp(viewModel: AppViewModel) {
   val navController = rememberNavController()
 
-  SharedTransitionLayout {
+  SharedTransitionLayout(
+    modifier = Modifier
+      .fillMaxSize()
+      .systemBarsPadding()
+      .clipToBounds()
+  ) {
     val sharedScope = this
     NavHost(
       navController = navController,

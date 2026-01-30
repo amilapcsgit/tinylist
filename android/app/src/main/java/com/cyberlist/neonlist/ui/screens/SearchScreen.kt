@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,8 +51,14 @@ fun SearchScreen(
     title = "Search",
     showBack = true,
     onBack = onBack
-  ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+  ) { innerPadding ->
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(innerPadding)
+        .consumeWindowInsets(innerPadding)
+        .padding(16.dp)
+    ) {
       OutlinedTextField(
         value = query,
         onValueChange = { query = it },

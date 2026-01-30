@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -184,10 +185,12 @@ fun HomeScreen(
         )
       }
     }
-  ) {
+  ) { innerPadding ->
     Box(
       modifier = Modifier
         .fillMaxSize()
+        .padding(innerPadding)
+        .consumeWindowInsets(innerPadding)
         .pointerInput(Unit) {
           detectTapGestures(onLongPress = { isCreating = true })
         }
@@ -421,6 +424,7 @@ private fun ListCard(
             .then(sharedModifier)
             .fillMaxWidth()
             .height(76.dp)
+            .clipToBounds()
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .background(NeonCard)
             .clip(RoundedCornerShape(20.dp))

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -168,56 +169,63 @@ fun ListDetailScreen(
         })
       }
     }
-  ) {
-    Column(modifier = Modifier.fillMaxSize().padding(bottom = 120.dp)) {
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(4.dp)
-          .background(listColor)
-      )
+  ) { innerPadding ->
+    Box(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)
+        .consumeWindowInsets(innerPadding)
+    ) {
+      Column(modifier = Modifier.fillMaxSize().padding(bottom = 120.dp)) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .background(listColor)
+        )
 
-      AnimatedContent(
-        targetState = listItems.isEmpty(),
-        label = "listEmptyTransition"
-      ) { isEmpty ->
-        if (isEmpty) {
-          Box(
-            modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
-            contentAlignment = Alignment.Center
-          ) {
-            Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
-          }
-        } else {
-          LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(
-              items = listItems,
-              key = { _, item -> item.id }
-            ) { index, item ->
-              TaskRow(
-                modifier = Modifier.animateItem(
-                  fadeInSpec = spring(),
-                  fadeOutSpec = spring()
-                ),
-                item = item,
-                color = listColor,
-                isSelected = selectedIds.contains(item.id),
-                entranceDelayMs = index * 50,
-                onToggleSelection = {
-                  selectedIds = if (selectedIds.contains(item.id)) {
-                  selectedIds - item.id
-                  } else {
-                    selectedIds + item.id
-                  }
-                },
-                onToggleDone = { viewModel.toggleItem(item) },
-                onEdit = {
-                  editTarget = item
-                  editText = item.text
-                  editColor = item.color
-                },
-                onDelete = { deleteTarget = item }
-              )
+        AnimatedContent(
+          targetState = listItems.isEmpty(),
+          label = "listEmptyTransition"
+        ) { isEmpty ->
+          if (isEmpty) {
+            Box(
+              modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+            }
+          } else {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+              itemsIndexed(
+                items = listItems,
+                key = { _, item -> item.id }
+              ) { index, item ->
+                TaskRow(
+                  modifier = Modifier.animateItem(
+                    fadeInSpec = spring(),
+                    fadeOutSpec = spring()
+                  ),
+                  item = item,
+                  color = listColor,
+                  isSelected = selectedIds.contains(item.id),
+                  entranceDelayMs = index * 50,
+                  onToggleSelection = {
+                    selectedIds = if (selectedIds.contains(item.id)) {
+                      selectedIds - item.id
+                    } else {
+                      selectedIds + item.id
+                    }
+                  },
+                  onToggleDone = { viewModel.toggleItem(item) },
+                  onEdit = {
+                    editTarget = item
+                    editText = item.text
+                    editColor = item.color
+                  },
+                  onDelete = { deleteTarget = item }
+                )
+              }
             }
           }
         }
@@ -492,6 +500,7 @@ private fun TaskRow(
           modifier = modifier
             .fillMaxWidth()
             .height(76.dp)
+            .clipToBounds()
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .background(bg)
             .clip(RoundedCornerShape(20.dp))
@@ -627,12 +636,16 @@ private fun OdometerSumText(
       (slideOutVertically(animationSpec = tween(120)) { it } + fadeOut(animationSpec = tween(120)))
   }
 
-  Row(verticalAlignment = Alignment.Bottom) {
+  Row(
+    verticalAlignment = Alignment.Bottom,
+    modifier = Modifier.clipToBounds()
+  ) {
     sumText.forEachIndexed { index, ch ->
       if (ch.isDigit()) {
         AnimatedContent(
           targetState = ch,
-          transitionSpec = { transitionSpec.using(SizeTransform(clip = false)) },
+          transitionSpec = { transitionSpec.using(SizeTransform(clip = true)) },
+          modifier = Modifier.clipToBounds(),
           label = "sumDigit$index"
         ) { digit ->
           Text(
