@@ -14,8 +14,8 @@ android {
     applicationId = "com.cyberlist.neonlist"
     minSdk = 31
     targetSdk = 35
-    versionCode = 3
-    versionName = "0.2"
+    versionCode = 4
+    versionName = "0.4"
   }
 
   val keystorePath = (project.findProperty("KEYSTORE_PATH") as String?) ?: System.getenv("KEYSTORE_PATH")
@@ -24,6 +24,7 @@ android {
   val keyPassword = (project.findProperty("KEY_PASSWORD") as String?) ?: System.getenv("KEY_PASSWORD")
 
   signingConfigs {
+    getByName("debug")
     create("release") {
       if (!keystorePath.isNullOrBlank()) {
         storeFile = file(keystorePath)
@@ -37,7 +38,11 @@ android {
   buildTypes {
     release {
       isMinifyEnabled = false
-      signingConfig = signingConfigs.getByName("release")
+      signingConfig = if (keystorePath.isNullOrBlank()) {
+        signingConfigs.getByName("debug")
+      } else {
+        signingConfigs.getByName("release")
+      }
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
         "proguard-rules.pro"
