@@ -53,6 +53,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -169,7 +170,10 @@ fun ListDetailScreen(
               key = { it.id }
             ) { item ->
               TaskRow(
-                modifier = Modifier.animateItem(),
+                modifier = Modifier.animateItem(
+                  fadeInSpec = spring(),
+                  fadeOutSpec = spring()
+                ),
                 item = item,
                 color = listColor,
                 isSelected = selectedIds.contains(item.id),
