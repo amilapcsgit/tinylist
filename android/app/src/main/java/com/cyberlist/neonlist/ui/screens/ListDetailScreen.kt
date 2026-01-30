@@ -39,6 +39,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateContentSize
@@ -59,6 +63,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +72,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -537,21 +544,11 @@ private fun BottomSumBar(
           style = MaterialTheme.typography.labelSmall
         )
         Row(verticalAlignment = Alignment.Bottom) {
-          val sumText = if (sum % 1 == 0.0) {
-            sum.toInt().toString()
-          } else {
-            String.format(Locale.getDefault(), "%.2f", sum)
-          }
-          AnimatedContent(
-            targetState = sumText,
-            label = "sumText"
-          ) { animatedSum ->
-            Text(
-              animatedSum,
-              color = NeonPrimary,
-              style = MaterialTheme.typography.displayMedium
-            )
-          }
+          OdometerSumText(
+            sum = sum,
+            color = NeonPrimary,
+            style = MaterialTheme.typography.displayMedium
+          )
           Spacer(modifier = Modifier.width(6.dp))
           Text("($count items)", color = NeonMutedForeground, fontSize = 12.sp)
         }
@@ -566,6 +563,57 @@ private fun BottomSumBar(
 }
 
 private data class SumData(val sum: Double, val count: Int)
+
+@Composable
+private fun OdometerSumText(
+  sum: Double,
+  color: Color,
+  style: TextStyle
+) {
+  var previousSum by remember { mutableStateOf(sum) }
+  val directionUp = sum >= previousSum
+  LaunchedEffect(sum) {
+    previousSum = sum
+  }
+
+  val sumText = if (sum % 1 == 0.0) {
+    sum.toInt().toString()
+  } else {
+    String.format(Locale.getDefault(), "%.2f", sum)
+  }
+  val digitStyle = style.copy(fontFamily = FontFamily.Monospace)
+  val transitionSpec = if (directionUp) {
+    (slideInVertically(animationSpec = tween(120)) { it } + fadeIn(animationSpec = tween(120))) togetherWith
+      (slideOutVertically(animationSpec = tween(120)) { -it } + fadeOut(animationSpec = tween(120)))
+  } else {
+    (slideInVertically(animationSpec = tween(120)) { -it } + fadeIn(animationSpec = tween(120))) togetherWith
+      (slideOutVertically(animationSpec = tween(120)) { it } + fadeOut(animationSpec = tween(120)))
+  }
+
+  Row(verticalAlignment = Alignment.Bottom) {
+    sumText.forEachIndexed { index, ch ->
+      if (ch.isDigit()) {
+        AnimatedContent(
+          targetState = ch,
+          transitionSpec = { transitionSpec.using(SizeTransform(clip = false)) },
+          label = "sumDigit$index"
+        ) { digit ->
+          Text(
+            digit.toString(),
+            color = color,
+            style = digitStyle
+          )
+        }
+      } else {
+        Text(
+          ch.toString(),
+          color = color,
+          style = digitStyle
+        )
+      }
+    }
+  }
+}
 
 private fun computeSum(items: List<ItemEntity>, selected: Set<String>): SumData {
   val target = if (selected.isEmpty()) items else items.filter { selected.contains(it.id) }
