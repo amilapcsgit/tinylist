@@ -5,6 +5,7 @@ package com.cyberlist.neonlist.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
@@ -74,11 +76,14 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.TextStyle
@@ -99,6 +104,7 @@ import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 private val numericRegex = Regex("(-?(?:\\d+[.,])?\\d+)(?=\\D*$)")
@@ -188,9 +194,9 @@ fun ListDetailScreen(
           targetState = listItems.isEmpty(),
           label = "listEmptyTransition"
         ) { isEmpty ->
-          if (isEmpty) {
-            Box(
-              modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
+      if (isEmpty) {
+        Box(
+          modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
               contentAlignment = Alignment.Center
             ) {
               Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
@@ -205,7 +211,11 @@ fun ListDetailScreen(
                   modifier = Modifier.animateItem(
                     fadeInSpec = spring(),
                     fadeOutSpec = spring()
-                  ),
+                  )
+                    .verticalSwipeActions(
+                      onSlideDown = { isAdding = true },
+                      onSlideUp = { viewModel.addItem(list.id, item.text, item.color) }
+                    ),
                   item = item,
                   color = listColor,
                   isSelected = selectedIds.contains(item.id),
@@ -559,6 +569,73 @@ private fun TaskRow(
   }
 
   Spacer(modifier = Modifier.height(10.dp))
+}
+
+private enum class VerticalSwipeAction { None, SlideDown, SlideUp }
+
+private fun Modifier.verticalSwipeActions(
+  onSlideDown: () -> Unit,
+  onSlideUp: () -> Unit
+): Modifier = composed {
+  var rawOffsetY by remember { mutableStateOf(0f) }
+  var action by remember { mutableStateOf(VerticalSwipeAction.None) }
+  val updatedOnSlideDown by rememberUpdatedState(onSlideDown)
+  val updatedOnSlideUp by rememberUpdatedState(onSlideUp)
+  val animatedOffsetY by animateFloatAsState(
+    targetValue = if (action == VerticalSwipeAction.None) rawOffsetY else 0f,
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "verticalSwipeOffset"
+  )
+  val scale by animateFloatAsState(
+    targetValue = if (action == VerticalSwipeAction.None) 1f else 0f,
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "verticalSwipeScale"
+  )
+
+  LaunchedEffect(action) {
+    when (action) {
+      VerticalSwipeAction.SlideDown -> {
+        delay(120)
+        updatedOnSlideDown()
+        rawOffsetY = 0f
+        action = VerticalSwipeAction.None
+      }
+      VerticalSwipeAction.SlideUp -> {
+        delay(120)
+        updatedOnSlideUp()
+        rawOffsetY = 0f
+        action = VerticalSwipeAction.None
+      }
+      VerticalSwipeAction.None -> Unit
+    }
+  }
+
+  this
+    .pointerInput(Unit) {
+      detectDragGestures(
+        onDragEnd = {
+          action = when {
+            rawOffsetY > 150f -> VerticalSwipeAction.SlideDown
+            rawOffsetY < -150f -> VerticalSwipeAction.SlideUp
+            else -> VerticalSwipeAction.None
+          }
+          if (action == VerticalSwipeAction.None) {
+            rawOffsetY = 0f
+          }
+        },
+        onDragCancel = { rawOffsetY = 0f },
+        onDrag = { change, dragAmount ->
+          if (action != VerticalSwipeAction.None) return@detectDragGestures
+          change.consumePositionChange()
+          rawOffsetY += dragAmount.y * 0.5f
+        }
+      )
+    }
+    .graphicsLayer(
+      translationY = animatedOffsetY,
+      scaleX = scale,
+      scaleY = scale
+    )
 }
 
 @Composable
