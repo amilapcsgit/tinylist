@@ -410,16 +410,15 @@ private fun ListCard(
       },
       content = {
         val sharedState = sharedTransitionScope.rememberSharedContentState(key = "list-${list.id}")
+        val sharedModifier = with(sharedTransitionScope) {
+          Modifier.sharedElement(
+            sharedContentState = sharedState,
+            animatedVisibilityScope = animatedVisibilityScope
+          )
+        }
         Row(
           modifier = Modifier
-            .then(
-              with(sharedTransitionScope) {
-                Modifier.sharedElement(
-                  sharedContentState = sharedState,
-                  animatedVisibilityScope = animatedVisibilityScope
-                )
-              }
-            )
+            .then(sharedModifier)
             .fillMaxWidth()
             .height(76.dp)
             .graphicsLayer(scaleX = scale, scaleY = scale)

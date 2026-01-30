@@ -51,6 +51,7 @@ fun NeonScaffold(
   onSearch: (() -> Unit)? = null,
   onSettings: (() -> Unit)? = null,
   titleModifier: Modifier = Modifier,
+  headerModifier: Modifier = Modifier,
   actions: @Composable RowScope.() -> Unit = {},
   content: @Composable BoxScope.() -> Unit
 ) {
@@ -72,6 +73,7 @@ fun NeonScaffold(
         onSearch = onSearch,
         onSettings = onSettings,
         titleModifier = titleModifier,
+        headerModifier = headerModifier,
         actions = actions
       )
 
@@ -93,10 +95,12 @@ private fun HeaderBar(
   onSearch: (() -> Unit)?,
   onSettings: (() -> Unit)?,
   titleModifier: Modifier,
+  headerModifier: Modifier,
   actions: @Composable RowScope.() -> Unit
 ) {
   Row(
     modifier = Modifier
+      .then(headerModifier)
       .fillMaxWidth()
       .height(64.dp)
       .background(NeonBackground.copy(alpha = 0.8f))

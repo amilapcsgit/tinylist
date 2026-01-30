@@ -131,7 +131,7 @@ fun ListDetailScreen(
   val sumData = computeSum(listItems, selectedIds)
 
   val headerSharedState = sharedTransitionScope.rememberSharedContentState(key = "list-$listId")
-  val headerTitleModifier = with(sharedTransitionScope) {
+  val headerContainerModifier = with(sharedTransitionScope) {
     Modifier.sharedElement(
       sharedContentState = headerSharedState,
       animatedVisibilityScope = animatedVisibilityScope
@@ -142,7 +142,7 @@ fun ListDetailScreen(
     title = list.title,
     showBack = true,
     onBack = onBack,
-    titleModifier = headerTitleModifier,
+    headerModifier = headerContainerModifier,
     actions = {
       NeonIconButton(onClick = { menuOpen = true }, label = "Menu") {
         Icon(Icons.Filled.MoreVert, contentDescription = "Menu", tint = NeonMutedForeground)
