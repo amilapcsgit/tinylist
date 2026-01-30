@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
@@ -44,14 +47,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import com.cyberlist.neonlist.AppViewModel
 import com.cyberlist.neonlist.SortMode
@@ -67,11 +84,9 @@ import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.ReorderableLazyListState
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun HomeScreen(
@@ -92,9 +107,10 @@ fun HomeScreen(
   var editTarget by remember { mutableStateOf<ListEntity?>(null) }
 
   val manualLists = remember(lists) { mutableStateListOf<ListEntity>().apply { addAll(lists) } }
-  val reorderState = rememberReorderableLazyListState(onMove = { from, to ->
+  val lazyListState = rememberLazyListState()
+  val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
-  })
+  }
 
   LaunchedEffect(lists, sortMode) {
     if (sortMode == SortMode.MANUAL) {
@@ -170,19 +186,20 @@ fun HomeScreen(
           .fillMaxSize()
           .padding(bottom = 96.dp)
       ) {
-        if (sortMode == SortMode.MANUAL) {
-          ReorderableLists(
-            lists = manualLists,
-            items = items,
-            state = reorderState,
-            onOpenList = onOpenList,
-            onDelete = { list ->
-              val listItems = items.filter { it.listId == list.id }
-              viewModel.deleteList(list, listItems)
-            },
-            onEdit = { editTarget = it }
-          )
-        } else {
+  if (sortMode == SortMode.MANUAL) {
+    ReorderableLists(
+      lists = manualLists,
+      items = items,
+      listState = lazyListState,
+      state = reorderState,
+      onOpenList = onOpenList,
+      onDelete = { list ->
+        val listItems = items.filter { it.listId == list.id }
+        viewModel.deleteList(list, listItems)
+      },
+      onEdit = { editTarget = it }
+    )
+  } else {
           Column(modifier = Modifier.fillMaxWidth()) {
             lists.forEach { list ->
               val listItems = items.filter { it.listId == list.id }
@@ -256,21 +273,20 @@ fun HomeScreen(
 private fun ReorderableLists(
   lists: List<ListEntity>,
   items: List<com.cyberlist.neonlist.data.ItemEntity>,
+  listState: androidx.compose.foundation.lazy.LazyListState,
   state: ReorderableLazyListState,
   onOpenList: (String) -> Unit,
   onDelete: (ListEntity) -> Unit,
   onEdit: (ListEntity) -> Unit
 ) {
   LazyColumn(
-    state = state.listState,
-    modifier = Modifier
-      .fillMaxWidth()
-      .reorderable(state)
+    state = listState,
+    modifier = Modifier.fillMaxWidth()
   ) {
     items(lists, key = { it.id }) { list ->
-      ReorderableItem(state, key = list.id) { _ ->
+      ReorderableItem(state = state, key = list.id) { _ ->
         val listItems = items.filter { it.listId == list.id }
-        Box(modifier = Modifier.detectReorderAfterLongPress(state)) {
+        Box(modifier = Modifier.longPressDraggableHandle()) {
           ListCard(
             list = list,
             itemCount = listItems.size,
@@ -297,6 +313,20 @@ private fun ListCard(
   dragHandle: Boolean = false
 ) {
   val color = NeonColorMap[list.color] ?: NeonPrimary
+  val density = LocalDensity.current
+  val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
+  val sizeSpec = tween<IntSize>(durationMillis = 160, easing = FastOutSlowInEasing)
+  val enter = slideInVertically(animationSpec = offsetSpec) { with(density) { -40.dp.roundToPx() } } +
+    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top)
+  val exit = slideOutVertically(animationSpec = offsetSpec) + shrinkVertically(animationSpec = sizeSpec)
+  val visibleState: MutableTransitionState<Boolean> =
+    remember { MutableTransitionState(false).apply { targetState = true } }
+  val interactionSource = remember { MutableInteractionSource() }
+  val pressed by interactionSource.collectIsPressedAsState()
+  val scale by animateFloatAsState(
+    targetValue = if (pressed) 0.98f else 1f,
+    label = "listCardPressScale"
+  )
   val dismissState = rememberSwipeToDismissBoxState(
     confirmValueChange = { value ->
       when (value) {
@@ -313,65 +343,76 @@ private fun ListCard(
     }
   )
 
-  SwipeToDismissBox(
-    state = dismissState,
-    backgroundContent = {
-      val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-      val bg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
-      val label = if (isDelete) "Delete" else "Edit"
-      Row(
-        modifier = Modifier
-          .fillMaxSize()
-          .background(bg)
-          .padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
-      ) {
-        Text(label.uppercase(), color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF))
-      }
-    },
-    content = {
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(76.dp)
-          .background(NeonCard)
-          .clip(RoundedCornerShape(20.dp))
-          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
-          .padding(horizontal = 18.dp)
-          .shadow(10.dp, RoundedCornerShape(20.dp))
-          .clickable { onOpen() },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+  AnimatedVisibility(
+    visibleState = visibleState,
+    enter = enter,
+    exit = exit,
+    modifier = Modifier.clipToBounds()
+  ) {
+    SwipeToDismissBox(
+      state = dismissState,
+      backgroundContent = {
+        val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+        val bg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+        val label = if (isDelete) "Delete" else "Edit"
+        Row(
+          modifier = Modifier
+            .fillMaxSize()
+            .background(bg)
+            .padding(horizontal = 20.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
+        ) {
+          Text(label.uppercase(), color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF))
+        }
+      },
+      content = {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(76.dp)
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .background(NeonCard)
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
+            .padding(horizontal = 18.dp)
+            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .clickable(
+              interactionSource = interactionSource,
+              indication = null
+            ) { onOpen() },
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .width(6.dp)
+                .height(36.dp)
+                .background(color)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+              list.title,
+              style = MaterialTheme.typography.titleLarge,
+              color = Color.White
+            )
+          }
           Box(
             modifier = Modifier
-              .width(6.dp)
-              .height(36.dp)
-              .background(color)
-          )
-          Spacer(modifier = Modifier.width(12.dp))
-          Text(
-            list.title,
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.White
-          )
-        }
-        Box(
-          modifier = Modifier
-            .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-          Text(
-            "${completedCount}/${itemCount}",
-            color = color,
-            style = MaterialTheme.typography.titleMedium
-          )
+              .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+              .padding(horizontal = 12.dp, vertical = 6.dp)
+          ) {
+            Text(
+              "${completedCount}/${itemCount}",
+              color = color,
+              style = MaterialTheme.typography.titleMedium
+            )
+          }
         }
       }
-    }
-  )
+    )
+  }
 
   Spacer(modifier = Modifier.height(10.dp))
 }

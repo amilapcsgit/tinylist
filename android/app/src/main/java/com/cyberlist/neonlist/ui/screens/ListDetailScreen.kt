@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -44,15 +46,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
 import com.cyberlist.neonlist.AppViewModel
 import com.cyberlist.neonlist.data.ItemEntity
 import com.cyberlist.neonlist.ui.NeonBackground
@@ -65,10 +83,12 @@ import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
+import java.util.Locale
 
 private val numericRegex = Regex("(-?(?:\\d+[.,])?\\d+)(?=\\D*$)")
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun ListDetailScreen(
   viewModel: AppViewModel,
   listId: String,
@@ -131,36 +151,44 @@ fun ListDetailScreen(
           .background(listColor)
       )
 
-      if (listItems.isEmpty()) {
-        Box(
-          modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
-          contentAlignment = Alignment.Center
-        ) {
-          Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
-        }
-      } else {
-        Column(modifier = Modifier.fillMaxWidth()) {
-          listItems.forEach { item ->
-            TaskRow(
-              item = item,
-              color = listColor,
-              isSelected = selectedIds.contains(item.id),
-              selectionMode = selectionMode,
-              onToggleSelection = {
-                selectedIds = if (selectedIds.contains(item.id)) {
+      AnimatedContent(
+        targetState = listItems.isEmpty(),
+        label = "listEmptyTransition"
+      ) { isEmpty ->
+        if (isEmpty) {
+          Box(
+            modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+          }
+        } else {
+          LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(
+              items = listItems,
+              key = { it.id }
+            ) { item ->
+              TaskRow(
+                modifier = Modifier.animateItem(),
+                item = item,
+                color = listColor,
+                isSelected = selectedIds.contains(item.id),
+                onToggleSelection = {
+                  selectedIds = if (selectedIds.contains(item.id)) {
                   selectedIds - item.id
-                } else {
-                  selectedIds + item.id
-                }
-              },
-              onToggleDone = { viewModel.toggleItem(item) },
-              onEdit = {
-                editTarget = item
-                editText = item.text
-                editColor = item.color
-              },
-              onDelete = { deleteTarget = item }
-            )
+                  } else {
+                    selectedIds + item.id
+                  }
+                },
+                onToggleDone = { viewModel.toggleItem(item) },
+                onEdit = {
+                  editTarget = item
+                  editText = item.text
+                  editColor = item.color
+                },
+                onDelete = { deleteTarget = item }
+              )
+            }
           }
         }
       }
@@ -328,10 +356,10 @@ fun ListDetailScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TaskRow(
+  modifier: Modifier = Modifier,
   item: ItemEntity,
   color: Color,
   isSelected: Boolean,
-  selectionMode: Boolean,
   onToggleSelection: () -> Unit,
   onToggleDone: () -> Unit,
   onEdit: () -> Unit,
@@ -351,6 +379,21 @@ private fun TaskRow(
         else -> false
       }
     }
+  )
+
+  val density = LocalDensity.current
+  val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
+  val sizeSpec = tween<IntSize>(durationMillis = 160, easing = FastOutSlowInEasing)
+  val enter = slideInVertically(animationSpec = offsetSpec) { with(density) { -40.dp.roundToPx() } } +
+    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top)
+  val exit = slideOutVertically(animationSpec = offsetSpec) + shrinkVertically(animationSpec = sizeSpec)
+  val visibleState: MutableTransitionState<Boolean> =
+    remember { MutableTransitionState(false).apply { targetState = true } }
+  val interactionSource = remember { MutableInteractionSource() }
+  val pressed by interactionSource.collectIsPressedAsState()
+  val scale by animateFloatAsState(
+    targetValue = if (pressed) 0.98f else 1f,
+    label = "taskRowPressScale"
   )
 
   SwipeToDismissBox(
@@ -380,7 +423,7 @@ private fun TaskRow(
     },
     content = {
       val itemColor = NeonColorMap[item.color] ?: color
-      val bg by animateColorAsState(targetValue = NeonCard, label = "itemBg")
+      val bg = NeonCard
       val textColor by animateColorAsState(
         targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
         label = "itemText"
@@ -390,53 +433,68 @@ private fun TaskRow(
         label = "textHighlight"
       )
 
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(76.dp)
-          .background(bg)
-          .clip(RoundedCornerShape(20.dp))
-          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
-          .shadow(10.dp, RoundedCornerShape(20.dp))
-          .combinedClickable(
-            onClick = { onToggleSelection() },
-            onDoubleClick = { onToggleDone() }
-          )
+      AnimatedVisibility(
+        visibleState = visibleState,
+        enter = enter,
+        exit = exit,
+        modifier = Modifier.clipToBounds()
       ) {
-        Row(
-          modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 18.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-              modifier = Modifier
-                .width(6.dp)
-                .height(36.dp)
-                .background(itemColor)
+        Box(
+          modifier = modifier
+            .animateContentSize()
+            .fillMaxWidth()
+            .height(76.dp)
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .background(bg)
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
+            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .combinedClickable(
+              interactionSource = interactionSource,
+              indication = null,
+              onClick = { onToggleSelection() },
+              onDoubleClick = { onToggleDone() }
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Box(
-              modifier = Modifier
-                .background(
-                  itemColor.copy(alpha = highlightAlpha),
-                  RoundedCornerShape(12.dp)
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-              Text(
-                item.text,
-                color = textColor,
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxSize()
+              .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Box(
+                modifier = Modifier
+                  .width(6.dp)
+                  .height(36.dp)
+                  .background(itemColor)
               )
+              Spacer(modifier = Modifier.width(12.dp))
+              Box(
+                modifier = Modifier
+                  .background(
+                    itemColor.copy(alpha = highlightAlpha),
+                    RoundedCornerShape(12.dp)
+                  )
+                  .padding(horizontal = 10.dp, vertical = 6.dp)
+              ) {
+                Text(
+                  item.text,
+                  color = textColor,
+                  style = MaterialTheme.typography.titleLarge,
+                  maxLines = 2,
+                  overflow = TextOverflow.Ellipsis
+                )
+              }
             }
-          }
-          if (item.isDone) {
-            Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+            AnimatedVisibility(
+              visible = item.isDone,
+              enter = scaleIn(),
+              exit = scaleOut()
+            ) {
+              Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+            }
           }
         }
       }
@@ -475,11 +533,21 @@ private fun BottomSumBar(
           style = MaterialTheme.typography.labelSmall
         )
         Row(verticalAlignment = Alignment.Bottom) {
-          Text(
-            if (sum % 1 == 0.0) sum.toInt().toString() else String.format("%.2f", sum),
-            color = NeonPrimary,
-            style = MaterialTheme.typography.displayMedium
-          )
+          val sumText = if (sum % 1 == 0.0) {
+            sum.toInt().toString()
+          } else {
+            String.format(Locale.getDefault(), "%.2f", sum)
+          }
+          AnimatedContent(
+            targetState = sumText,
+            label = "sumText"
+          ) { animatedSum ->
+            Text(
+              animatedSum,
+              color = NeonPrimary,
+              style = MaterialTheme.typography.displayMedium
+            )
+          }
           Spacer(modifier = Modifier.width(6.dp))
           Text("($count items)", color = NeonMutedForeground, fontSize = 12.sp)
         }

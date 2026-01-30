@@ -8,12 +8,12 @@ plugins {
 
 android {
   namespace = "com.cyberlist.neonlist"
-  compileSdk = 34
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.cyberlist.neonlist"
     minSdk = 31
-    targetSdk = 34
+    targetSdk = 35
     versionCode = 3
     versionName = "0.2"
   }
@@ -63,7 +63,7 @@ android {
 }
 
 dependencies {
-  val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
+  val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
   implementation(composeBom)
   androidTestImplementation(composeBom)
 
@@ -87,7 +87,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-  implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+  implementation("sh.calvin.reorderable:reorderable:3.0.0")
 
   debugImplementation("androidx.compose.ui:ui-tooling")
   debugImplementation("androidx.compose.ui:ui-test-manifest")
