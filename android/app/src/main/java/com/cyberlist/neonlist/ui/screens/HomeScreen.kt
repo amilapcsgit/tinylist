@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package com.cyberlist.neonlist.ui.screens
 
 import androidx.compose.foundation.background
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
@@ -48,11 +51,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -93,7 +102,9 @@ fun HomeScreen(
   viewModel: AppViewModel,
   onOpenList: (String) -> Unit,
   onOpenSearch: () -> Unit,
-  onOpenSettings: () -> Unit
+  onOpenSettings: () -> Unit,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedContentScope
 ) {
   val lists by viewModel.sortedLists.collectAsState()
   val items by viewModel.items.collectAsState()
@@ -197,11 +208,13 @@ fun HomeScreen(
         val listItems = items.filter { it.listId == list.id }
         viewModel.deleteList(list, listItems)
       },
-      onEdit = { editTarget = it }
+      onEdit = { editTarget = it },
+      sharedTransitionScope = sharedTransitionScope,
+      animatedVisibilityScope = animatedVisibilityScope
     )
-  } else {
-          Column(modifier = Modifier.fillMaxWidth()) {
-            lists.forEach { list ->
+        } else {
+          LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
               val listItems = items.filter { it.listId == list.id }
               ListCard(
                 list = list,
@@ -209,7 +222,10 @@ fun HomeScreen(
                 completedCount = listItems.count { it.isDone },
                 onOpen = { onOpenList(list.id) },
                 onDelete = { viewModel.deleteList(list, listItems) },
-                onEdit = { editTarget = list }
+                onEdit = { editTarget = list },
+                entranceDelayMs = index * 50,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope
               )
             }
           }
@@ -277,13 +293,15 @@ private fun ReorderableLists(
   state: ReorderableLazyListState,
   onOpenList: (String) -> Unit,
   onDelete: (ListEntity) -> Unit,
-  onEdit: (ListEntity) -> Unit
+  onEdit: (ListEntity) -> Unit,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedContentScope
 ) {
   LazyColumn(
     state = listState,
     modifier = Modifier.fillMaxWidth()
   ) {
-    items(lists, key = { it.id }) { list ->
+    itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
       ReorderableItem(state = state, key = list.id) { _ ->
         val listItems = items.filter { it.listId == list.id }
         Box(modifier = Modifier.longPressDraggableHandle()) {
@@ -294,7 +312,10 @@ private fun ReorderableLists(
             onOpen = { onOpenList(list.id) },
             onDelete = { onDelete(list) },
             onEdit = { onEdit(list) },
-            dragHandle = true
+            dragHandle = true,
+            entranceDelayMs = index * 50,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope
           )
         }
       }
@@ -310,14 +331,31 @@ private fun ListCard(
   onOpen: () -> Unit,
   onDelete: () -> Unit,
   onEdit: () -> Unit,
-  dragHandle: Boolean = false
+  dragHandle: Boolean = false,
+  entranceDelayMs: Int = 0,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedContentScope
 ) {
   val color = NeonColorMap[list.color] ?: NeonPrimary
   val density = LocalDensity.current
+  val delayMillis = entranceDelayMs.coerceAtLeast(0)
   val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
   val sizeSpec = tween<IntSize>(durationMillis = 160, easing = FastOutSlowInEasing)
-  val enter = slideInVertically(animationSpec = offsetSpec) { with(density) { -40.dp.roundToPx() } } +
-    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top)
+  val enter = slideInVertically(
+    animationSpec = tween(
+      durationMillis = 160,
+      delayMillis = delayMillis,
+      easing = FastOutSlowInEasing
+    )
+  ) { with(density) { -40.dp.roundToPx() } } +
+    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top) +
+    fadeIn(
+      animationSpec = tween(
+        durationMillis = 120,
+        delayMillis = delayMillis,
+        easing = FastOutSlowInEasing
+      )
+    )
   val exit = slideOutVertically(animationSpec = offsetSpec) + shrinkVertically(animationSpec = sizeSpec)
   val visibleState: MutableTransitionState<Boolean> =
     remember { MutableTransitionState(false).apply { targetState = true } }
@@ -325,6 +363,10 @@ private fun ListCard(
   val pressed by interactionSource.collectIsPressedAsState()
   val scale by animateFloatAsState(
     targetValue = if (pressed) 0.98f else 1f,
+    animationSpec = spring(
+      dampingRatio = Spring.DampingRatioMediumBouncy,
+      stiffness = Spring.StiffnessLow
+    ),
     label = "listCardPressScale"
   )
   val dismissState = rememberSwipeToDismissBoxState(
@@ -367,8 +409,17 @@ private fun ListCard(
         }
       },
       content = {
+        val sharedState = sharedTransitionScope.rememberSharedContentState(key = "list-${list.id}")
         Row(
           modifier = Modifier
+            .then(
+              with(sharedTransitionScope) {
+                Modifier.sharedElement(
+                  sharedContentState = sharedState,
+                  animatedVisibilityScope = animatedVisibilityScope
+                )
+              }
+            )
             .fillMaxWidth()
             .height(76.dp)
             .graphicsLayer(scaleX = scale, scaleY = scale)

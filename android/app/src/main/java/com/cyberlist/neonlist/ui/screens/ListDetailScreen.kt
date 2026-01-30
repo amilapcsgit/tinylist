@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package com.cyberlist.neonlist.ui.screens
 
 import androidx.compose.foundation.background
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -48,8 +51,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -100,7 +107,9 @@ private val numericRegex = Regex("(-?(?:\\d+[.,])?\\d+)(?=\\D*$)")
 fun ListDetailScreen(
   viewModel: AppViewModel,
   listId: String,
-  onBack: () -> Unit
+  onBack: () -> Unit,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedContentScope
 ) {
   val lists by viewModel.lists.collectAsState()
   val items by viewModel.items.collectAsState()
@@ -121,10 +130,19 @@ fun ListDetailScreen(
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItems, selectedIds)
 
+  val headerSharedState = sharedTransitionScope.rememberSharedContentState(key = "list-$listId")
+  val headerTitleModifier = with(sharedTransitionScope) {
+    Modifier.sharedElement(
+      sharedContentState = headerSharedState,
+      animatedVisibilityScope = animatedVisibilityScope
+    )
+  }
+
   NeonScaffold(
     title = list.title,
     showBack = true,
     onBack = onBack,
+    titleModifier = headerTitleModifier,
     actions = {
       NeonIconButton(onClick = { menuOpen = true }, label = "Menu") {
         Icon(Icons.Filled.MoreVert, contentDescription = "Menu", tint = NeonMutedForeground)
@@ -172,10 +190,10 @@ fun ListDetailScreen(
           }
         } else {
           LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(
+            itemsIndexed(
               items = listItems,
-              key = { it.id }
-            ) { item ->
+              key = { _, item -> item.id }
+            ) { index, item ->
               TaskRow(
                 modifier = Modifier.animateItem(
                   fadeInSpec = spring(),
@@ -184,6 +202,7 @@ fun ListDetailScreen(
                 item = item,
                 color = listColor,
                 isSelected = selectedIds.contains(item.id),
+                entranceDelayMs = index * 50,
                 onToggleSelection = {
                   selectedIds = if (selectedIds.contains(item.id)) {
                   selectedIds - item.id
@@ -371,6 +390,7 @@ private fun TaskRow(
   item: ItemEntity,
   color: Color,
   isSelected: Boolean,
+  entranceDelayMs: Int = 0,
   onToggleSelection: () -> Unit,
   onToggleDone: () -> Unit,
   onEdit: () -> Unit,
@@ -393,10 +413,24 @@ private fun TaskRow(
   )
 
   val density = LocalDensity.current
+  val delayMillis = entranceDelayMs.coerceAtLeast(0)
   val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
   val sizeSpec = tween<IntSize>(durationMillis = 160, easing = FastOutSlowInEasing)
-  val enter = slideInVertically(animationSpec = offsetSpec) { with(density) { -40.dp.roundToPx() } } +
-    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top)
+  val enter = slideInVertically(
+    animationSpec = tween(
+      durationMillis = 160,
+      delayMillis = delayMillis,
+      easing = FastOutSlowInEasing
+    )
+  ) { with(density) { -40.dp.roundToPx() } } +
+    expandVertically(animationSpec = sizeSpec, expandFrom = Alignment.Top) +
+    fadeIn(
+      animationSpec = tween(
+        durationMillis = 120,
+        delayMillis = delayMillis,
+        easing = FastOutSlowInEasing
+      )
+    )
   val exit = slideOutVertically(animationSpec = offsetSpec) + shrinkVertically(animationSpec = sizeSpec)
   val visibleState: MutableTransitionState<Boolean> =
     remember { MutableTransitionState(false).apply { targetState = true } }
@@ -404,55 +438,58 @@ private fun TaskRow(
   val pressed by interactionSource.collectIsPressedAsState()
   val scale by animateFloatAsState(
     targetValue = if (pressed) 0.98f else 1f,
+    animationSpec = spring(
+      dampingRatio = Spring.DampingRatioMediumBouncy,
+      stiffness = Spring.StiffnessLow
+    ),
     label = "taskRowPressScale"
   )
 
-  SwipeToDismissBox(
-    state = dismissState,
-    backgroundContent = {
-      val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-      val progress = dismissState.progress
-      val label = if (isDelete) "Delete" else "Edit"
-      val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
-      val bg = baseBg.copy(alpha = baseBg.alpha * progress)
-      Row(
-        modifier = Modifier
-          .fillMaxSize()
-          .background(bg)
-          .padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
-      ) {
-        if (progress > 0f) {
-          Text(
-            label.uppercase(),
-            color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF),
-            modifier = Modifier
-          )
+  AnimatedVisibility(
+    visibleState = visibleState,
+    enter = enter,
+    exit = exit,
+    modifier = Modifier.clipToBounds()
+  ) {
+    SwipeToDismissBox(
+      state = dismissState,
+      backgroundContent = {
+        val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+        val progress = dismissState.progress
+        val label = if (isDelete) "Delete" else "Edit"
+        val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+        val bg = baseBg.copy(alpha = baseBg.alpha * progress)
+        Row(
+          modifier = Modifier
+            .fillMaxSize()
+            .background(bg)
+            .padding(horizontal = 20.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
+        ) {
+          if (progress > 0f) {
+            Text(
+              label.uppercase(),
+              color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF),
+              modifier = Modifier
+            )
+          }
         }
-      }
-    },
-    content = {
-      val itemColor = NeonColorMap[item.color] ?: color
-      val bg = NeonCard
-      val textColor by animateColorAsState(
-        targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
-        label = "itemText"
-      )
-      val highlightAlpha by animateFloatAsState(
-        targetValue = if (isSelected) 0.85f else 0f,
-        label = "textHighlight"
-      )
+      },
+      content = {
+        val itemColor = NeonColorMap[item.color] ?: color
+        val bg = NeonCard
+        val textColor by animateColorAsState(
+          targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
+          label = "itemText"
+        )
+        val highlightAlpha by animateFloatAsState(
+          targetValue = if (isSelected) 0.85f else 0f,
+          label = "textHighlight"
+        )
 
-      AnimatedVisibility(
-        visibleState = visibleState,
-        enter = enter,
-        exit = exit,
-        modifier = Modifier.clipToBounds()
-      ) {
         Box(
           modifier = modifier
-            .animateContentSize()
             .fillMaxWidth()
             .height(76.dp)
             .graphicsLayer(scaleX = scale, scaleY = scale)
@@ -509,8 +546,8 @@ private fun TaskRow(
           }
         }
       }
-    }
-  )
+    )
+  }
 
   Spacer(modifier = Modifier.height(10.dp))
 }
