@@ -1,7 +1,8 @@
 package com.cyberlist.neonlist.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -40,9 +42,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +58,7 @@ import com.cyberlist.neonlist.data.ItemEntity
 import com.cyberlist.neonlist.ui.NeonBackground
 import com.cyberlist.neonlist.ui.NeonColorMap
 import com.cyberlist.neonlist.ui.NeonCard
+import com.cyberlist.neonlist.ui.NeonBorder
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
@@ -319,6 +325,7 @@ fun ListDetailScreen(
   }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TaskRow(
   item: ItemEntity,
@@ -350,8 +357,10 @@ private fun TaskRow(
     state = dismissState,
     backgroundContent = {
       val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+      val progress = dismissState.progress
       val label = if (isDelete) "Delete" else "Edit"
-      val bg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+      val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+      val bg = baseBg.copy(alpha = baseBg.alpha * progress)
       Row(
         modifier = Modifier
           .fillMaxSize()
@@ -360,49 +369,81 @@ private fun TaskRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
       ) {
-        Text(label.uppercase(), color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF))
+        if (progress > 0f) {
+          Text(
+            label.uppercase(),
+            color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF),
+            modifier = Modifier
+          )
+        }
       }
     },
     content = {
-      Row(
+      val itemColor = NeonColorMap[item.color] ?: color
+      val bg by animateColorAsState(targetValue = NeonCard, label = "itemBg")
+      val textColor by animateColorAsState(
+        targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
+        label = "itemText"
+      )
+      val highlightAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 0.85f else 0f,
+        label = "textHighlight"
+      )
+
+      Box(
         modifier = Modifier
           .fillMaxWidth()
-          .height(64.dp)
-          .background(if (isSelected) NeonBackground.copy(alpha = 0.6f) else NeonSecondary.copy(alpha = 0.9f))
-          .padding(horizontal = 16.dp)
-          .pointerInput(Unit) {
-            detectTapGestures(
-              onTap = { onToggleSelection() },
-              onDoubleTap = { onToggleDone() }
-            )
-          },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+          .height(76.dp)
+          .background(bg)
+          .clip(RoundedCornerShape(20.dp))
+          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
+          .shadow(10.dp, RoundedCornerShape(20.dp))
+          .combinedClickable(
+            onClick = { onToggleSelection() },
+            onDoubleClick = { onToggleDone() }
+          )
       ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Box(
-            modifier = Modifier
-              .width(6.dp)
-              .height(36.dp)
-              .background(NeonColorMap[item.color] ?: color)
-          )
-          Spacer(modifier = Modifier.width(12.dp))
-          Text(
-            item.text,
-            color = if (item.isDone) NeonMutedForeground else Color.White,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-          )
-        }
-        if (item.isDone) {
-          Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+        Row(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 18.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .width(6.dp)
+                .height(36.dp)
+                .background(itemColor)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+              modifier = Modifier
+                .background(
+                  itemColor.copy(alpha = highlightAlpha),
+                  RoundedCornerShape(12.dp)
+                )
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+              Text(
+                item.text,
+                color = textColor,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          if (item.isDone) {
+            Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+          }
         }
       }
     }
   )
 
-  Spacer(modifier = Modifier.height(4.dp))
+  Spacer(modifier = Modifier.height(10.dp))
 }
 
 @Composable

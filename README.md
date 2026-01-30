@@ -15,6 +15,7 @@ A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app
   - Right on item -> edit
   - Left on item -> delete
   - Double-tap item -> mark done
+- Single tap -> select for sum
 - Selection mode with numeric sum from item text
 - Search across lists/items
 - Export JSON backup
@@ -64,3 +65,9 @@ cd android
 
 ## Notes
 This project intentionally mirrors the visual and interaction model of an older Android 2.5 list app, but upgrades it with modern Compose UI, improved gesture controls, and safer local storage practices.
+
+## Recent UI Improvements (v0.2)
+- Unified Home + ListDetail card styling and typography
+- Neon dialogs for add/edit list and item with improved readability
+- Selection highlight only behind text with animated color fill
+- Clearer overflow menus with dark backgrounds and white text
