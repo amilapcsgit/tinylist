@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -40,9 +41,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,6 +59,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -106,6 +105,7 @@ import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
 import kotlinx.coroutines.delay
 import java.util.Locale
+import kotlin.math.abs
 
 private val numericRegex = Regex("(-?(?:\\d+[.,])?\\d+)(?=\\D*$)")
 
@@ -211,15 +211,17 @@ fun ListDetailScreen(
                   modifier = Modifier.animateItem(
                     fadeInSpec = spring(),
                     fadeOutSpec = spring()
-                  )
-                    .verticalSwipeActions(
-                      onSlideDown = { isAdding = true },
-                      onSlideUp = { viewModel.addItem(list.id, item.text, item.color) }
-                    ),
+                  ),
                   item = item,
                   color = listColor,
                   isSelected = selectedIds.contains(item.id),
                   entranceDelayMs = index * 50,
+                  onSlideDown = {
+                    newItemText = ""
+                    newItemColor = list.color
+                    isAdding = true
+                  },
+                  onSlideUp = { viewModel.addItem(list.id, item.text, item.color) },
                   onToggleSelection = {
                     selectedIds = if (selectedIds.contains(item.id)) {
                       selectedIds - item.id
@@ -409,26 +411,20 @@ private fun TaskRow(
   color: Color,
   isSelected: Boolean,
   entranceDelayMs: Int = 0,
+  onSlideDown: () -> Unit,
+  onSlideUp: () -> Unit,
   onToggleSelection: () -> Unit,
   onToggleDone: () -> Unit,
   onEdit: () -> Unit,
   onDelete: () -> Unit
 ) {
-  val dismissState = rememberSwipeToDismissBoxState(
-    confirmValueChange = { value ->
-      when (value) {
-        SwipeToDismissBoxValue.StartToEnd -> {
-          onEdit()
-          false
-        }
-        SwipeToDismissBoxValue.EndToStart -> {
-          onDelete()
-          true
-        }
-        else -> false
-      }
-    }
+  val swipeState = rememberMultiAxisSwipeActions(
+    onSlideDown = onSlideDown,
+    onSlideUp = onSlideUp,
+    onSlideLeft = onDelete,
+    onSlideRight = onEdit
   )
+  val rowModifier = modifier.then(swipeState.modifier)
 
   val density = LocalDensity.current
   val delayMillis = entranceDelayMs.coerceAtLeast(0)
@@ -462,6 +458,11 @@ private fun TaskRow(
     ),
     label = "taskRowPressScale"
   )
+  val extraHeight by animateDpAsState(
+    targetValue = with(density) { (abs(swipeState.offsetY) * 0.15f).toDp() }.coerceAtMost(28.dp),
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "swipeExtraHeight"
+  )
 
   AnimatedVisibility(
     visibleState = visibleState,
@@ -469,173 +470,288 @@ private fun TaskRow(
     exit = exit,
     modifier = Modifier.clipToBounds()
   ) {
-    SwipeToDismissBox(
-      state = dismissState,
-      backgroundContent = {
-        val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-        val progress = dismissState.progress
+    val itemColor = NeonColorMap[item.color] ?: color
+    val bg = NeonCard
+    val textColor by animateColorAsState(
+      targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
+      label = "itemText"
+    )
+    val highlightAlpha by animateFloatAsState(
+      targetValue = if (isSelected) 0.85f else 0f,
+      label = "textHighlight"
+    )
+
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(76.dp + extraHeight)
+        .clipToBounds()
+    ) {
+      val swipeDirection = swipeState.direction
+      val swipeProgress = swipeState.progress
+      if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
+        val isDelete = swipeState.isNegative
         val label = if (isDelete) "Delete" else "Edit"
         val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
-        val bg = baseBg.copy(alpha = baseBg.alpha * progress)
+        val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
         Row(
           modifier = Modifier
             .fillMaxSize()
-            .background(bg)
+            .background(bgColor)
             .padding(horizontal = 20.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
         ) {
-          if (progress > 0f) {
+          if (swipeProgress > 0f) {
             Text(
               label.uppercase(),
-              color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF),
-              modifier = Modifier
+              color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
             )
-          }
-        }
-      },
-      content = {
-        val itemColor = NeonColorMap[item.color] ?: color
-        val bg = NeonCard
-        val textColor by animateColorAsState(
-          targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
-          label = "itemText"
-        )
-        val highlightAlpha by animateFloatAsState(
-          targetValue = if (isSelected) 0.85f else 0f,
-          label = "textHighlight"
-        )
-
-        Box(
-          modifier = modifier
-            .fillMaxWidth()
-            .height(76.dp)
-            .clipToBounds()
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .background(bg)
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
-            .shadow(10.dp, RoundedCornerShape(20.dp))
-            .combinedClickable(
-              interactionSource = interactionSource,
-              indication = null,
-              onClick = { onToggleSelection() },
-              onDoubleClick = { onToggleDone() }
-            )
-        ) {
-          Row(
-            modifier = Modifier
-              .fillMaxSize()
-              .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Box(
-                modifier = Modifier
-                  .width(6.dp)
-                  .height(36.dp)
-                  .background(itemColor)
-              )
-              Spacer(modifier = Modifier.width(12.dp))
-              Box(
-                modifier = Modifier
-                  .background(
-                    itemColor.copy(alpha = highlightAlpha),
-                    RoundedCornerShape(12.dp)
-                  )
-                  .padding(horizontal = 10.dp, vertical = 6.dp)
-              ) {
-                Text(
-                  item.text,
-                  color = textColor,
-                  style = MaterialTheme.typography.titleLarge,
-                  maxLines = 2,
-                  overflow = TextOverflow.Ellipsis
-                )
-              }
-            }
-            AnimatedVisibility(
-              visible = item.isDone,
-              enter = scaleIn(),
-              exit = scaleOut()
-            ) {
-              Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
-            }
           }
         }
       }
-    )
+      if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
+        val isDuplicate = swipeState.isNegative
+        val label = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
+        val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
+        val hintAlpha = swipeProgress.coerceIn(0f, 1f)
+        val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
+        Box(
+          modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = hintAlpha),
+          contentAlignment = if (isDuplicate) Alignment.BottomCenter else Alignment.TopCenter
+        ) {
+          Row(
+            modifier = Modifier
+              .padding(vertical = 8.dp)
+              .background(NeonBackground.copy(alpha = 0.6f), RoundedCornerShape(999.dp))
+              .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(hintIcon, contentDescription = label, tint = hintColor)
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(label, color = hintColor, style = MaterialTheme.typography.labelMedium)
+          }
+        }
+      }
+
+      Box(
+        modifier = rowModifier
+          .fillMaxWidth()
+          .height(76.dp)
+          .clipToBounds()
+          .graphicsLayer(scaleX = scale, scaleY = scale)
+          .background(bg)
+          .clip(RoundedCornerShape(20.dp))
+          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
+          .shadow(10.dp, RoundedCornerShape(20.dp))
+          .combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = { onToggleSelection() },
+            onDoubleClick = { onToggleDone() }
+          )
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 18.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .width(6.dp)
+                .height(36.dp)
+                .background(itemColor)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+              modifier = Modifier
+                .background(
+                  itemColor.copy(alpha = highlightAlpha),
+                  RoundedCornerShape(12.dp)
+                )
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+              Text(
+                item.text,
+                color = textColor,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          AnimatedVisibility(
+            visible = item.isDone,
+            enter = scaleIn(),
+            exit = scaleOut()
+          ) {
+            Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+          }
+        }
+      }
+    }
   }
 
   Spacer(modifier = Modifier.height(10.dp))
 }
 
-private enum class VerticalSwipeAction { None, SlideDown, SlideUp }
+private enum class MultiAxisSwipeAction { None, SlideDown, SlideUp, SlideLeft, SlideRight }
+private enum class MultiAxisSwipeDirection { None, Horizontal, Vertical }
 
-private fun Modifier.verticalSwipeActions(
+private data class MultiAxisSwipeState(
+  val modifier: Modifier,
+  val direction: MultiAxisSwipeDirection,
+  val progress: Float,
+  val isNegative: Boolean,
+  val offsetX: Float,
+  val offsetY: Float
+)
+
+@Composable
+private fun rememberMultiAxisSwipeActions(
   onSlideDown: () -> Unit,
-  onSlideUp: () -> Unit
-): Modifier = composed {
+  onSlideUp: () -> Unit,
+  onSlideLeft: () -> Unit,
+  onSlideRight: () -> Unit
+): MultiAxisSwipeState {
+  var rawOffsetX by remember { mutableStateOf(0f) }
   var rawOffsetY by remember { mutableStateOf(0f) }
-  var action by remember { mutableStateOf(VerticalSwipeAction.None) }
+  var directionLocked by remember { mutableStateOf<MultiAxisSwipeDirection?>(null) }
+  var action by remember { mutableStateOf(MultiAxisSwipeAction.None) }
+
+  val slopPx = with(LocalDensity.current) { 20.dp.toPx() }
+  val horizontalThresholdPx = with(LocalDensity.current) { 200.dp.toPx() }
+  val verticalThresholdPx = with(LocalDensity.current) { 75.dp.toPx() }
+
   val updatedOnSlideDown by rememberUpdatedState(onSlideDown)
   val updatedOnSlideUp by rememberUpdatedState(onSlideUp)
-  val animatedOffsetY by animateFloatAsState(
-    targetValue = if (action == VerticalSwipeAction.None) rawOffsetY else 0f,
+  val updatedOnSlideLeft by rememberUpdatedState(onSlideLeft)
+  val updatedOnSlideRight by rememberUpdatedState(onSlideRight)
+
+  val animatedOffsetX by animateFloatAsState(
+    targetValue = if (action == MultiAxisSwipeAction.None) rawOffsetX else 0f,
     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "verticalSwipeOffset"
+    label = "multiAxisOffsetX"
+  )
+  val animatedOffsetY by animateFloatAsState(
+    targetValue = if (action == MultiAxisSwipeAction.None) rawOffsetY else 0f,
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "multiAxisOffsetY"
   )
   val scale by animateFloatAsState(
-    targetValue = if (action == VerticalSwipeAction.None) 1f else 0f,
+    targetValue = if (action == MultiAxisSwipeAction.None) 1f else 0f,
     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "verticalSwipeScale"
+    label = "multiAxisScale"
   )
 
   LaunchedEffect(action) {
     when (action) {
-      VerticalSwipeAction.SlideDown -> {
+      MultiAxisSwipeAction.SlideDown -> {
         delay(120)
         updatedOnSlideDown()
-        rawOffsetY = 0f
-        action = VerticalSwipeAction.None
       }
-      VerticalSwipeAction.SlideUp -> {
+      MultiAxisSwipeAction.SlideUp -> {
         delay(120)
         updatedOnSlideUp()
-        rawOffsetY = 0f
-        action = VerticalSwipeAction.None
       }
-      VerticalSwipeAction.None -> Unit
+      MultiAxisSwipeAction.SlideLeft -> {
+        delay(120)
+        updatedOnSlideLeft()
+      }
+      MultiAxisSwipeAction.SlideRight -> {
+        delay(120)
+        updatedOnSlideRight()
+      }
+      MultiAxisSwipeAction.None -> Unit
+    }
+    if (action != MultiAxisSwipeAction.None) {
+      rawOffsetX = 0f
+      rawOffsetY = 0f
+      directionLocked = null
+      action = MultiAxisSwipeAction.None
     }
   }
 
-  this
+  val direction = directionLocked ?: MultiAxisSwipeDirection.None
+  val progress = when (direction) {
+    MultiAxisSwipeDirection.Horizontal -> (abs(rawOffsetX) / horizontalThresholdPx).coerceIn(0f, 1f)
+    MultiAxisSwipeDirection.Vertical -> (abs(rawOffsetY) / verticalThresholdPx).coerceIn(0f, 1f)
+    MultiAxisSwipeDirection.None -> 0f
+  }
+  val isNegative = when (direction) {
+    MultiAxisSwipeDirection.Horizontal -> rawOffsetX < 0f
+    MultiAxisSwipeDirection.Vertical -> rawOffsetY < 0f
+    MultiAxisSwipeDirection.None -> false
+  }
+
+  val modifier = Modifier
     .pointerInput(Unit) {
       detectDragGestures(
+        onDragStart = { directionLocked = null },
+        onDragCancel = {
+          rawOffsetX = 0f
+          rawOffsetY = 0f
+          directionLocked = null
+        },
         onDragEnd = {
           action = when {
-            rawOffsetY > 150f -> VerticalSwipeAction.SlideDown
-            rawOffsetY < -150f -> VerticalSwipeAction.SlideUp
-            else -> VerticalSwipeAction.None
+            rawOffsetY > verticalThresholdPx -> MultiAxisSwipeAction.SlideDown
+            rawOffsetY < -verticalThresholdPx -> MultiAxisSwipeAction.SlideUp
+            rawOffsetX > horizontalThresholdPx -> MultiAxisSwipeAction.SlideRight
+            rawOffsetX < -horizontalThresholdPx -> MultiAxisSwipeAction.SlideLeft
+            else -> MultiAxisSwipeAction.None
           }
-          if (action == VerticalSwipeAction.None) {
+          if (action == MultiAxisSwipeAction.None) {
+            rawOffsetX = 0f
             rawOffsetY = 0f
+            directionLocked = null
           }
         },
-        onDragCancel = { rawOffsetY = 0f },
         onDrag = { change, dragAmount ->
-          if (action != VerticalSwipeAction.None) return@detectDragGestures
-          change.consumePositionChange()
-          rawOffsetY += dragAmount.y * 0.5f
+          if (action != MultiAxisSwipeAction.None) return@detectDragGestures
+          if (directionLocked == null) {
+            directionLocked = if (abs(dragAmount.x) > abs(dragAmount.y)) {
+              MultiAxisSwipeDirection.Horizontal
+            } else {
+              MultiAxisSwipeDirection.Vertical
+            }
+          }
+          when (directionLocked) {
+            MultiAxisSwipeDirection.Horizontal -> {
+              rawOffsetX += dragAmount.x
+              change.consumePositionChange()
+            }
+            MultiAxisSwipeDirection.Vertical -> {
+              rawOffsetY += dragAmount.y * 0.5f
+              if (abs(rawOffsetY) > slopPx) {
+                change.consumePositionChange()
+              }
+            }
+            else -> Unit
+          }
         }
       )
     }
     .graphicsLayer(
+      translationX = animatedOffsetX,
       translationY = animatedOffsetY,
       scaleX = scale,
       scaleY = scale
     )
+
+  return MultiAxisSwipeState(
+    modifier = modifier,
+    direction = direction,
+    progress = progress,
+    isNegative = isNegative,
+    offsetX = animatedOffsetX,
+    offsetY = animatedOffsetY
+  )
 }
 
 @Composable
