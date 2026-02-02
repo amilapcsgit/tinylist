@@ -19,6 +19,8 @@ sealed class HistoryEntry {
   data class ListDelete(val list: ListEntity, val items: List<ItemEntity>) : HistoryEntry()
   data class ItemDelete(val item: ItemEntity) : HistoryEntry()
   data class ItemComplete(val id: String, val wasDone: Boolean) : HistoryEntry()
+  data class ListUpdate(val oldList: ListEntity) : HistoryEntry()
+  data class ItemUpdate(val oldItem: ItemEntity) : HistoryEntry()
 }
 
 class AppViewModel(private val repository: Repository) : ViewModel() {
@@ -59,6 +61,9 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
 
   fun updateList(list: ListEntity) {
     viewModelScope.launch {
+      lists.value.find { it.id == list.id }?.let { old ->
+        pushHistory(HistoryEntry.ListUpdate(old))
+      }
       repository.updateList(list)
     }
   }
@@ -84,6 +89,9 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
 
   fun updateItem(item: ItemEntity) {
     viewModelScope.launch {
+      items.value.find { it.id == item.id }?.let { old ->
+        pushHistory(HistoryEntry.ItemUpdate(old))
+      }
       repository.updateItem(item)
     }
   }
@@ -152,6 +160,8 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
           val target = items.value.find { it.id == entry.id } ?: return@launch
           repository.updateItem(target.copy(isDone = entry.wasDone))
         }
+        is HistoryEntry.ListUpdate -> repository.updateList(entry.oldList)
+        is HistoryEntry.ItemUpdate -> repository.updateItem(entry.oldItem)
       }
     }
   }
