@@ -538,11 +538,11 @@ private fun TaskRow(
 
         if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
           val isDuplicate = swipeState.isNegative
-          val label = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
+          val hintText = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
           val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
           val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
 
-          AnimatedVisibility(
+          androidx.compose.animation.AnimatedVisibility(
             visible = (isDuplicate && swipeState.offsetY < -10f) || (!isDuplicate && swipeState.offsetY > 10f),
             enter = fadeIn() + expandVertically(expandFrom = if (isDuplicate) Alignment.Bottom else Alignment.Top),
             exit = fadeOut() + shrinkVertically(shrinkTowards = if (isDuplicate) Alignment.Bottom else Alignment.Top),
@@ -555,9 +555,9 @@ private fun TaskRow(
                 .padding(horizontal = 12.dp, vertical = 6.dp),
               verticalAlignment = Alignment.CenterVertically
             ) {
-              Icon(hintIcon, contentDescription = label, tint = hintColor)
+              Icon(hintIcon, contentDescription = hintText, tint = hintColor)
               Spacer(modifier = Modifier.width(6.dp))
-              Text(label, color = hintColor, style = MaterialTheme.typography.labelMedium)
+              Text(hintText, color = hintColor, style = MaterialTheme.typography.labelMedium)
             }
           }
         }
