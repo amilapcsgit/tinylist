@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,20 +16,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -44,9 +50,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
@@ -104,6 +112,7 @@ import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
 
@@ -120,9 +129,35 @@ fun ListDetailScreen(
 ) {
   val lists by viewModel.lists.collectAsState()
   val items by viewModel.items.collectAsState()
+  val pagingEnabled by viewModel.listPagingEnabledState.collectAsState()
   val list = lists.find { it.id == listId } ?: return
   val listItems = items.filter { it.listId == listId }.sortedBy { it.createdAt }
   val listColor = NeonColorMap[list.color] ?: NeonPrimary
+  val listState = rememberLazyListState()
+  val snapFlingBehavior = rememberSnapFlingBehavior(listState)
+  val scope = rememberCoroutineScope()
+  val listCount = listItems.size
+  val layoutInfo by remember { derivedStateOf { listState.layoutInfo } }
+  val isOverflowing by remember {
+    derivedStateOf { listCount > 0 && layoutInfo.totalItemsCount > layoutInfo.visibleItemsInfo.size }
+  }
+  val showScrollUp by remember {
+    derivedStateOf {
+      isOverflowing && (listState.canScrollBackward ||
+        listState.firstVisibleItemIndex > 0 ||
+        listState.firstVisibleItemScrollOffset > 0)
+    }
+  }
+  val showScrollDown by remember {
+    derivedStateOf {
+      if (!isOverflowing) {
+        false
+      } else {
+        val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        listState.canScrollForward || lastVisibleIndex < listCount - 1
+      }
+    }
+  }
 
   var selectedIds by remember { mutableStateOf(setOf<String>()) }
   var menuOpen by remember { mutableStateOf(false) }
@@ -146,7 +181,7 @@ fun ListDetailScreen(
   }
 
   NeonScaffold(
-    title = list.title,
+    title = "${list.title} v0.86",
     showBack = true,
     onBack = onBack,
     headerModifier = headerContainerModifier,
@@ -202,7 +237,12 @@ fun ListDetailScreen(
               Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
             }
           } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            val fling = if (pagingEnabled) snapFlingBehavior else androidx.compose.foundation.gestures.ScrollableDefaults.flingBehavior()
+            LazyColumn(
+              modifier = Modifier.fillMaxWidth(),
+              state = listState,
+              flingBehavior = fling
+            ) {
               itemsIndexed(
                 items = listItems,
                 key = { _, item -> item.id }
@@ -252,15 +292,56 @@ fun ListDetailScreen(
       modifier = Modifier.align(Alignment.BottomCenter)
     )
 
-    FloatingActionButton(
-      onClick = { isAdding = true },
+    Column(
       modifier = Modifier
         .align(Alignment.BottomEnd)
         .padding(bottom = 96.dp, end = 24.dp),
-      containerColor = NeonPrimary,
-      contentColor = Color.Black
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+      horizontalAlignment = Alignment.End
     ) {
-      Icon(Icons.Filled.Add, contentDescription = "Add")
+      AnimatedVisibility(visible = showScrollUp) {
+        ScrollFab(
+          icon = Icons.Filled.KeyboardArrowUp,
+          contentDescription = "Scroll up",
+          onStep = { animated ->
+            val target = if (listState.firstVisibleItemScrollOffset > 0) {
+              listState.firstVisibleItemIndex
+            } else {
+              (listState.firstVisibleItemIndex - 1).coerceAtLeast(0)
+            }
+            scope.launch {
+              if (animated) {
+                listState.animateScrollToItem(target)
+              } else {
+                listState.scrollToItem(target)
+              }
+            }
+          }
+        )
+      }
+      AnimatedVisibility(visible = showScrollDown) {
+        ScrollFab(
+          icon = Icons.Filled.KeyboardArrowDown,
+          contentDescription = "Scroll down",
+          onStep = { animated ->
+            val target = (listState.firstVisibleItemIndex + 1).coerceAtMost(listCount - 1)
+            scope.launch {
+              if (animated) {
+                listState.animateScrollToItem(target)
+              } else {
+                listState.scrollToItem(target)
+              }
+            }
+          }
+        )
+      }
+      FloatingActionButton(
+        onClick = { isAdding = true },
+        containerColor = NeonPrimary,
+        contentColor = Color.Black
+      ) {
+        Icon(Icons.Filled.Add, contentDescription = "Add")
+      }
     }
   }
 
@@ -798,6 +879,62 @@ private fun BottomSumBar(
         }
       }
     }
+  }
+}
+
+@Composable
+private fun ScrollFab(
+  icon: androidx.compose.ui.graphics.vector.ImageVector,
+  contentDescription: String,
+  onStep: (Boolean) -> Unit
+) {
+  val interactionSource = remember { MutableInteractionSource() }
+  val pressed by interactionSource.collectIsPressedAsState()
+  val scale by animateFloatAsState(
+    targetValue = if (pressed) 0.9f else 1f,
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "scrollFabScale"
+  )
+  val containerColor by animateColorAsState(
+    targetValue = if (pressed) NeonPrimary.copy(alpha = 0.85f) else NeonPrimary,
+    animationSpec = tween(120),
+    label = "scrollFabColor"
+  )
+
+  LaunchedEffect(interactionSource) {
+    var repeatJob: kotlinx.coroutines.Job? = null
+    interactionSource.interactions.collect { interaction ->
+      when (interaction) {
+        is PressInteraction.Press -> {
+          repeatJob?.cancel()
+          repeatJob = launch {
+            onStep(true)
+            delay(280)
+            while (true) {
+              onStep(false)
+              delay(70)
+            }
+          }
+        }
+        is PressInteraction.Release,
+        is PressInteraction.Cancel -> {
+          repeatJob?.cancel()
+          repeatJob = null
+        }
+      }
+    }
+  }
+
+  FloatingActionButton(
+    onClick = {},
+    modifier = Modifier
+      .size(48.dp)
+      .graphicsLayer(scaleX = scale, scaleY = scale),
+    interactionSource = interactionSource,
+    containerColor = containerColor,
+    contentColor = Color.Black
+  ) {
+    Icon(icon, contentDescription = contentDescription)
   }
 }
 

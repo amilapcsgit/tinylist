@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.Locale
 import java.util.UUID
 
 class Repository(
@@ -27,13 +28,26 @@ class Repository(
       ListEntity(id = "2", title = "Groceries", color = "green", createdAt = now, order = 1),
       ListEntity(id = "3", title = "Ideas", color = "cyan", createdAt = now, order = 2)
     )
-    val items = listOf(
+    val items = mutableListOf(
       ItemEntity(id = "101", listId = "1", text = "Welcome to NeonList", isDone = false, color = "red", createdAt = now),
       ItemEntity(id = "102", listId = "1", text = "Swipe right to edit", isDone = false, color = "blue", createdAt = now + 1),
       ItemEntity(id = "103", listId = "1", text = "Swipe left to delete", isDone = true, color = "green", createdAt = now + 2),
       ItemEntity(id = "104", listId = "2", text = "Milk 2.50", isDone = false, color = "green", createdAt = now + 3),
       ItemEntity(id = "105", listId = "2", text = "Bread 1.20", isDone = false, color = "orange", createdAt = now + 4)
     )
+    for (i in 1..20) {
+      val price = String.format(Locale.US, "%.2f", 1.25 + (i * 0.35))
+      items.add(
+        ItemEntity(
+          id = "2${200 + i}",
+          listId = "2",
+          text = "Grocery Item $i $price",
+          isDone = false,
+          color = if (i % 3 == 0) "green" else if (i % 3 == 1) "orange" else "cyan",
+          createdAt = now + 4 + i
+        )
+      )
+    }
     listDao.upsertAll(lists)
     itemDao.upsertAll(items)
   }

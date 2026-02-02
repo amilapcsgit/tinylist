@@ -21,12 +21,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.DropdownMenu
@@ -45,12 +48,14 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -97,6 +102,7 @@ import com.cyberlist.neonlist.ui.components.NeonScaffold
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -111,6 +117,8 @@ fun HomeScreen(
   val items by viewModel.items.collectAsState()
   val sortMode by viewModel.currentSortMode.collectAsState()
   val history by viewModel.historyState.collectAsState()
+  val pagingEnabled by viewModel.listPagingEnabledState.collectAsState()
+  val scope = rememberCoroutineScope()
 
   var isCreating by remember { mutableStateOf(false) }
   var newTitle by remember { mutableStateOf("") }
@@ -120,8 +128,31 @@ fun HomeScreen(
 
   val manualLists = remember(lists) { mutableStateListOf<ListEntity>().apply { addAll(lists) } }
   val lazyListState = rememberLazyListState()
+  val snapFlingBehavior = rememberSnapFlingBehavior(lazyListState)
   val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
+  }
+  val listCount = if (sortMode == SortMode.MANUAL) manualLists.size else lists.size
+  val layoutInfo by remember { derivedStateOf { lazyListState.layoutInfo } }
+  val isOverflowing by remember {
+    derivedStateOf { listCount > 0 && layoutInfo.totalItemsCount > layoutInfo.visibleItemsInfo.size }
+  }
+  val showScrollUp by remember {
+    derivedStateOf {
+      isOverflowing && (lazyListState.canScrollBackward ||
+        lazyListState.firstVisibleItemIndex > 0 ||
+        lazyListState.firstVisibleItemScrollOffset > 0)
+    }
+  }
+  val showScrollDown by remember {
+    derivedStateOf {
+      if (!isOverflowing) {
+        false
+      } else {
+        val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        lazyListState.canScrollForward || lastVisibleIndex < listCount - 1
+      }
+    }
   }
 
   LaunchedEffect(lists, sortMode) {
@@ -140,7 +171,7 @@ fun HomeScreen(
   }
 
   NeonScaffold(
-    title = "Neon Lists",
+    title = "Neon Lists v0.86",
     showBack = false,
     onBack = {},
     onSearch = onOpenSearch,
@@ -216,7 +247,12 @@ fun HomeScreen(
       animatedVisibilityScope = animatedVisibilityScope
     )
         } else {
-          LazyColumn(modifier = Modifier.fillMaxWidth()) {
+          val fling = if (pagingEnabled) snapFlingBehavior else androidx.compose.foundation.gestures.ScrollableDefaults.flingBehavior()
+          LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            state = lazyListState,
+            flingBehavior = fling
+          ) {
             itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
               val listItems = items.filter { it.listId == list.id }
               ListCard(
@@ -246,15 +282,50 @@ fun HomeScreen(
 
       }
 
-      FloatingActionButton(
-        onClick = { isCreating = true },
+      Column(
         modifier = Modifier
           .align(Alignment.BottomEnd)
           .padding(24.dp),
-        containerColor = NeonPrimary,
-        contentColor = Color.Black
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.End
       ) {
-        Icon(Icons.Filled.Add, contentDescription = "Add")
+        AnimatedVisibility(visible = showScrollUp) {
+          FloatingActionButton(
+            onClick = {
+              val target = if (lazyListState.firstVisibleItemScrollOffset > 0) {
+                lazyListState.firstVisibleItemIndex
+              } else {
+                (lazyListState.firstVisibleItemIndex - 1).coerceAtLeast(0)
+              }
+              scope.launch { lazyListState.animateScrollToItem(target) }
+            },
+            modifier = Modifier.size(48.dp),
+            containerColor = NeonPrimary,
+            contentColor = Color.Black
+          ) {
+            Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Scroll up")
+          }
+        }
+        AnimatedVisibility(visible = showScrollDown) {
+          FloatingActionButton(
+            onClick = {
+              val target = (lazyListState.firstVisibleItemIndex + 1).coerceAtMost(listCount - 1)
+              scope.launch { lazyListState.animateScrollToItem(target) }
+            },
+            modifier = Modifier.size(48.dp),
+            containerColor = NeonPrimary,
+            contentColor = Color.Black
+          ) {
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Scroll down")
+          }
+        }
+        FloatingActionButton(
+          onClick = { isCreating = true },
+          containerColor = NeonPrimary,
+          contentColor = Color.Black
+        ) {
+          Icon(Icons.Filled.Add, contentDescription = "Add")
+        }
       }
     }
   }
