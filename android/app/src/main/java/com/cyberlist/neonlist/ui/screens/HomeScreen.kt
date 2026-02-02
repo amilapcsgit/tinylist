@@ -28,6 +28,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,9 +40,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -94,6 +92,8 @@ import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
+import com.cyberlist.neonlist.ui.components.MultiAxisSwipeDirection
+import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -212,6 +212,8 @@ fun HomeScreen(
         viewModel.deleteList(list, listItems)
       },
       onEdit = { editTarget = it },
+      onDuplicate = { viewModel.duplicateList(it.id) },
+      onAddNew = { isCreating = true },
       sharedTransitionScope = sharedTransitionScope,
       animatedVisibilityScope = animatedVisibilityScope
     )
@@ -226,6 +228,8 @@ fun HomeScreen(
                 onOpen = { onOpenList(list.id) },
                 onDelete = { viewModel.deleteList(list, listItems) },
                 onEdit = { editTarget = list },
+                onDuplicate = { viewModel.duplicateList(list.id) },
+                onAddNew = { isCreating = true },
                 entranceDelayMs = index * 50,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope
@@ -297,6 +301,8 @@ private fun ReorderableLists(
   onOpenList: (String) -> Unit,
   onDelete: (ListEntity) -> Unit,
   onEdit: (ListEntity) -> Unit,
+  onDuplicate: (ListEntity) -> Unit,
+  onAddNew: () -> Unit,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedContentScope
 ) {
@@ -315,6 +321,8 @@ private fun ReorderableLists(
             onOpen = { onOpenList(list.id) },
             onDelete = { onDelete(list) },
             onEdit = { onEdit(list) },
+            onDuplicate = { onDuplicate(list) },
+            onAddNew = onAddNew,
             dragHandle = true,
             entranceDelayMs = index * 50,
             sharedTransitionScope = sharedTransitionScope,
@@ -334,6 +342,8 @@ private fun ListCard(
   onOpen: () -> Unit,
   onDelete: () -> Unit,
   onEdit: () -> Unit,
+  onDuplicate: () -> Unit,
+  onAddNew: () -> Unit,
   dragHandle: Boolean = false,
   entranceDelayMs: Int = 0,
   sharedTransitionScope: SharedTransitionScope,
@@ -364,28 +374,36 @@ private fun ListCard(
     remember { MutableTransitionState(false).apply { targetState = true } }
   val interactionSource = remember { MutableInteractionSource() }
   val pressed by interactionSource.collectIsPressedAsState()
+
+  val swipeState = rememberMultiAxisSwipeActions(
+    onSlideDown = onAddNew,
+    onSlideUp = onDuplicate,
+    onSlideLeft = onDelete,
+    onSlideRight = onEdit
+  )
+  val rowModifier = swipeState.modifier
+  val isLongPressed = swipeState.isLongPressed
+
   val scale by animateFloatAsState(
-    targetValue = if (pressed) 0.98f else 1f,
+    targetValue = if (pressed || isLongPressed) 0.96f else 1f,
     animationSpec = spring(
       dampingRatio = Spring.DampingRatioMediumBouncy,
       stiffness = Spring.StiffnessLow
     ),
     label = "listCardPressScale"
   )
-  val dismissState = rememberSwipeToDismissBoxState(
-    confirmValueChange = { value ->
-      when (value) {
-        SwipeToDismissBoxValue.StartToEnd -> {
-          onEdit()
-          false
-        }
-        SwipeToDismissBoxValue.EndToStart -> {
-          onDelete()
-          true
-        }
-        else -> false
-      }
-    }
+
+  val topGap by animateDpAsState(
+    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY < 0)
+      with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
+    else 0.dp,
+    label = "topGap"
+  )
+  val bottomGap by animateDpAsState(
+    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY > 0)
+      with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
+    else 0.dp,
+    label = "bottomGap"
   )
 
   AnimatedVisibility(
@@ -394,24 +412,69 @@ private fun ListCard(
     exit = exit,
     modifier = Modifier.clipToBounds()
   ) {
-    SwipeToDismissBox(
-      state = dismissState,
-      backgroundContent = {
-        val isDelete = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-        val bg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
-        val label = if (isDelete) "Delete" else "Edit"
-        Row(
-          modifier = Modifier
-            .fillMaxSize()
-            .background(bg)
-            .padding(horizontal = 20.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
-        ) {
-          Text(label.uppercase(), color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF))
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clipToBounds()
+    ) {
+      Spacer(modifier = Modifier.height(topGap))
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(76.dp)
+          .clipToBounds()
+      ) {
+        val swipeDirection = swipeState.direction
+        val swipeProgress = swipeState.progress
+
+        if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
+          val isDelete = swipeState.isNegative
+          val label = if (isDelete) "Delete" else "Edit"
+          val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+          val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
+          Row(
+            modifier = Modifier
+              .fillMaxSize()
+              .background(bgColor)
+              .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
+          ) {
+            if (swipeProgress > 0f) {
+              Text(
+                label.uppercase(),
+                color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
+              )
+            }
+          }
         }
-      },
-      content = {
+
+        if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
+          val isDuplicate = swipeState.isNegative
+          val label = if (isDuplicate) "DUPLICATE" else "ADD LIST"
+          val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
+          val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
+
+          AnimatedVisibility(
+            visible = (isDuplicate && swipeState.offsetY < -10f) || (!isDuplicate && swipeState.offsetY > 10f),
+            enter = fadeIn() + expandVertically(expandFrom = if (isDuplicate) Alignment.Bottom else Alignment.Top),
+            exit = fadeOut() + shrinkVertically(shrinkTowards = if (isDuplicate) Alignment.Bottom else Alignment.Top),
+            modifier = Modifier.align(if (isDuplicate) Alignment.BottomCenter else Alignment.TopCenter)
+          ) {
+            Row(
+              modifier = Modifier
+                .padding(vertical = 8.dp)
+                .background(NeonBackground.copy(alpha = 0.6f), RoundedCornerShape(999.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(hintIcon, contentDescription = label, tint = hintColor)
+              Spacer(modifier = Modifier.width(6.dp))
+              Text(label, color = hintColor, style = MaterialTheme.typography.labelMedium)
+            }
+          }
+        }
+
         val sharedState = sharedTransitionScope.rememberSharedContentState(key = "list-${list.id}")
         val sharedModifier = with(sharedTransitionScope) {
           Modifier.sharedElement(
@@ -422,6 +485,7 @@ private fun ListCard(
         Row(
           modifier = Modifier
             .then(sharedModifier)
+            .then(rowModifier)
             .fillMaxWidth()
             .height(76.dp)
             .clipToBounds()
@@ -465,7 +529,8 @@ private fun ListCard(
           }
         }
       }
-    )
+      Spacer(modifier = Modifier.height(bottomGap))
+    }
   }
 
   Spacer(modifier = Modifier.height(10.dp))
