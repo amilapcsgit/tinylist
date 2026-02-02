@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -464,6 +463,11 @@ private fun TaskRow(
     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
     label = "swipeExtraHeight"
   )
+  LaunchedEffect(pressed) {
+    if (!pressed) {
+      swipeState.disarmLongPress()
+    }
+  }
 
   AnimatedVisibility(
     visibleState = visibleState,
@@ -612,7 +616,8 @@ private data class MultiAxisSwipeState(
   val isNegative: Boolean,
   val offsetX: Float,
   val offsetY: Float,
-  val armLongPress: () -> Unit
+  val armLongPress: () -> Unit,
+  val disarmLongPress: () -> Unit
 )
 
 @Composable
@@ -696,14 +701,6 @@ private fun rememberMultiAxisSwipeActions(
 
   val modifier = Modifier
     .pointerInput(Unit) {
-      detectTapGestures(
-        onPress = {
-          tryAwaitRelease()
-          longPressActive = false
-        }
-      )
-    }
-    .pointerInput(Unit) {
       detectDragGestures(
         onDragStart = { directionLocked = null },
         onDragCancel = {
@@ -770,7 +767,8 @@ private fun rememberMultiAxisSwipeActions(
     isNegative = isNegative,
     offsetX = animatedOffsetX,
     offsetY = animatedOffsetY,
-    armLongPress = { longPressActive = true }
+    armLongPress = { longPressActive = true },
+    disarmLongPress = { longPressActive = false }
   )
 }
 
