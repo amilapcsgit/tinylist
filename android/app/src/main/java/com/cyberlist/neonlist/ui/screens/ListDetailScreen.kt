@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -550,7 +551,8 @@ private fun TaskRow(
             interactionSource = interactionSource,
             indication = null,
             onClick = { onToggleSelection() },
-            onDoubleClick = { onToggleDone() }
+            onDoubleClick = { onToggleDone() },
+            onLongClick = { swipeState.armLongPress() }
           )
       ) {
         Row(
@@ -609,7 +611,8 @@ private data class MultiAxisSwipeState(
   val progress: Float,
   val isNegative: Boolean,
   val offsetX: Float,
-  val offsetY: Float
+  val offsetY: Float,
+  val armLongPress: () -> Unit
 )
 
 @Composable
@@ -623,6 +626,7 @@ private fun rememberMultiAxisSwipeActions(
   var rawOffsetY by remember { mutableStateOf(0f) }
   var directionLocked by remember { mutableStateOf<MultiAxisSwipeDirection?>(null) }
   var action by remember { mutableStateOf(MultiAxisSwipeAction.None) }
+  var longPressActive by remember { mutableStateOf(false) }
 
   val slopPx = with(LocalDensity.current) { 20.dp.toPx() }
   val horizontalThresholdPx = with(LocalDensity.current) { 200.dp.toPx() }
@@ -673,6 +677,7 @@ private fun rememberMultiAxisSwipeActions(
       rawOffsetX = 0f
       rawOffsetY = 0f
       directionLocked = null
+      longPressActive = false
       action = MultiAxisSwipeAction.None
     }
   }
@@ -691,17 +696,26 @@ private fun rememberMultiAxisSwipeActions(
 
   val modifier = Modifier
     .pointerInput(Unit) {
+      detectTapGestures(
+        onPress = {
+          tryAwaitRelease()
+          longPressActive = false
+        }
+      )
+    }
+    .pointerInput(Unit) {
       detectDragGestures(
         onDragStart = { directionLocked = null },
         onDragCancel = {
           rawOffsetX = 0f
           rawOffsetY = 0f
           directionLocked = null
+          longPressActive = false
         },
         onDragEnd = {
           action = when {
-            rawOffsetY > verticalThresholdPx -> MultiAxisSwipeAction.SlideDown
-            rawOffsetY < -verticalThresholdPx -> MultiAxisSwipeAction.SlideUp
+            longPressActive && rawOffsetY > verticalThresholdPx -> MultiAxisSwipeAction.SlideDown
+            longPressActive && rawOffsetY < -verticalThresholdPx -> MultiAxisSwipeAction.SlideUp
             rawOffsetX > horizontalThresholdPx -> MultiAxisSwipeAction.SlideRight
             rawOffsetX < -horizontalThresholdPx -> MultiAxisSwipeAction.SlideLeft
             else -> MultiAxisSwipeAction.None
@@ -710,6 +724,7 @@ private fun rememberMultiAxisSwipeActions(
             rawOffsetX = 0f
             rawOffsetY = 0f
             directionLocked = null
+            longPressActive = false
           }
         },
         onDrag = { change, dragAmount ->
@@ -717,9 +732,12 @@ private fun rememberMultiAxisSwipeActions(
           if (directionLocked == null) {
             directionLocked = if (abs(dragAmount.x) > abs(dragAmount.y)) {
               MultiAxisSwipeDirection.Horizontal
-            } else {
+            } else if (longPressActive) {
               MultiAxisSwipeDirection.Vertical
+            } else {
+              null
             }
+            if (directionLocked == null) return@detectDragGestures
           }
           when (directionLocked) {
             MultiAxisSwipeDirection.Horizontal -> {
@@ -727,6 +745,7 @@ private fun rememberMultiAxisSwipeActions(
               change.consumePositionChange()
             }
             MultiAxisSwipeDirection.Vertical -> {
+              if (!longPressActive) return@detectDragGestures
               rawOffsetY += dragAmount.y * 0.5f
               if (abs(rawOffsetY) > slopPx) {
                 change.consumePositionChange()
@@ -750,7 +769,8 @@ private fun rememberMultiAxisSwipeActions(
     progress = progress,
     isNegative = isNegative,
     offsetX = animatedOffsetX,
-    offsetY = animatedOffsetY
+    offsetY = animatedOffsetY,
+    armLongPress = { longPressActive = true }
   )
 }
 
