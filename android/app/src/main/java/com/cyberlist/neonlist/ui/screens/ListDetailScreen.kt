@@ -5,7 +5,8 @@ package com.cyberlist.neonlist.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -81,7 +83,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
@@ -103,6 +104,8 @@ import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
+import com.cyberlist.neonlist.ui.components.MultiAxisSwipeDirection
+import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
@@ -136,6 +139,7 @@ fun ListDetailScreen(
 
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItems, selectedIds)
+  val history by viewModel.historyState.collectAsState()
 
   val headerSharedState = sharedTransitionScope.rememberSharedContentState(key = "list-$listId")
   val headerContainerModifier = with(sharedTransitionScope) {
@@ -151,6 +155,11 @@ fun ListDetailScreen(
     onBack = onBack,
     headerModifier = headerContainerModifier,
     actions = {
+      if (history.isNotEmpty()) {
+        NeonIconButton(onClick = { viewModel.undo() }, label = "Undo") {
+          Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo", tint = NeonPrimary)
+        }
+      }
       NeonIconButton(onClick = { menuOpen = true }, label = "Menu") {
         Icon(Icons.Filled.MoreVert, contentDescription = "Menu", tint = NeonMutedForeground)
       }
@@ -450,18 +459,27 @@ private fun TaskRow(
     remember { MutableTransitionState(false).apply { targetState = true } }
   val interactionSource = remember { MutableInteractionSource() }
   val pressed by interactionSource.collectIsPressedAsState()
+  val isLongPressed = swipeState.isLongPressed
   val scale by animateFloatAsState(
-    targetValue = if (pressed) 0.98f else 1f,
+    targetValue = if (pressed || isLongPressed) 0.96f else 1f,
     animationSpec = spring(
       dampingRatio = Spring.DampingRatioMediumBouncy,
       stiffness = Spring.StiffnessLow
     ),
     label = "taskRowPressScale"
   )
-  val extraHeight by animateDpAsState(
-    targetValue = with(density) { (abs(swipeState.offsetY) * 0.15f).toDp() }.coerceAtMost(28.dp),
-    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "swipeExtraHeight"
+
+  val topGap by animateDpAsState(
+    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY < 0)
+      with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
+    else 0.dp,
+    label = "topGap"
+  )
+  val bottomGap by animateDpAsState(
+    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY > 0)
+      with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
+    else 0.dp,
+    label = "bottomGap"
   )
 
   AnimatedVisibility(
@@ -481,78 +499,86 @@ private fun TaskRow(
       label = "textHighlight"
     )
 
-    Box(
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .height(76.dp + extraHeight)
         .clipToBounds()
     ) {
-      val swipeDirection = swipeState.direction
-      val swipeProgress = swipeState.progress
-      if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
-        val isDelete = swipeState.isNegative
-        val label = if (isDelete) "Delete" else "Edit"
-        val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
-        val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
-        Row(
-          modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor)
-            .padding(horizontal = 20.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
-        ) {
-          if (swipeProgress > 0f) {
-            Text(
-              label.uppercase(),
-              color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
-            )
-          }
-        }
-      }
-      if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
-        val isDuplicate = swipeState.isNegative
-        val label = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
-        val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
-        val hintAlpha = swipeProgress.coerceIn(0f, 1f)
-        val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
-        Box(
-          modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer(alpha = hintAlpha),
-          contentAlignment = if (isDuplicate) Alignment.BottomCenter else Alignment.TopCenter
-        ) {
-          Row(
-            modifier = Modifier
-              .padding(vertical = 8.dp)
-              .background(NeonBackground.copy(alpha = 0.6f), RoundedCornerShape(999.dp))
-              .padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Icon(hintIcon, contentDescription = label, tint = hintColor)
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(label, color = hintColor, style = MaterialTheme.typography.labelMedium)
-          }
-        }
-      }
-
+      Spacer(modifier = Modifier.height(topGap))
       Box(
-        modifier = rowModifier
+        modifier = Modifier
           .fillMaxWidth()
           .height(76.dp)
           .clipToBounds()
-          .graphicsLayer(scaleX = scale, scaleY = scale)
-          .background(bg)
-          .clip(RoundedCornerShape(20.dp))
-          .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
-          .shadow(10.dp, RoundedCornerShape(20.dp))
-          .combinedClickable(
-            interactionSource = interactionSource,
-            indication = null,
-            onClick = { onToggleSelection() },
-            onDoubleClick = { onToggleDone() }
-          )
       ) {
+        val swipeDirection = swipeState.direction
+        val swipeProgress = swipeState.progress
+
+        if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
+          val isDelete = swipeState.isNegative
+          val label = if (isDelete) "Delete" else "Edit"
+          val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
+          val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
+          Row(
+            modifier = Modifier
+              .fillMaxSize()
+              .background(bgColor)
+              .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (isDelete) Arrangement.End else Arrangement.Start
+          ) {
+            if (swipeProgress > 0f) {
+              Text(
+                label.uppercase(),
+                color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
+              )
+            }
+          }
+        }
+
+        if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
+          val isDuplicate = swipeState.isNegative
+          val hintText = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
+          val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
+          val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
+
+          androidx.compose.animation.AnimatedVisibility(
+            visible = (isDuplicate && swipeState.offsetY < -10f) || (!isDuplicate && swipeState.offsetY > 10f),
+            enter = fadeIn() + expandVertically(expandFrom = if (isDuplicate) Alignment.Bottom else Alignment.Top),
+            exit = fadeOut() + shrinkVertically(shrinkTowards = if (isDuplicate) Alignment.Bottom else Alignment.Top),
+            modifier = Modifier.align(if (isDuplicate) Alignment.BottomCenter else Alignment.TopCenter)
+          ) {
+            Row(
+              modifier = Modifier
+                .padding(vertical = 8.dp)
+                .background(NeonBackground.copy(alpha = 0.6f), RoundedCornerShape(999.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(hintIcon, contentDescription = hintText, tint = hintColor)
+              Spacer(modifier = Modifier.width(6.dp))
+              Text(hintText, color = hintColor, style = MaterialTheme.typography.labelMedium)
+            }
+          }
+        }
+
+        Box(
+          modifier = rowModifier
+            .fillMaxWidth()
+            .height(76.dp)
+            .clipToBounds()
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .background(bg)
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
+            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .combinedClickable(
+              interactionSource = interactionSource,
+              indication = null,
+              onClick = { onToggleSelection() },
+              onDoubleClick = { onToggleDone() }
+            )
+        ) {
         Row(
           modifier = Modifier
             .fillMaxSize()
@@ -593,166 +619,15 @@ private fun TaskRow(
             Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
           }
         }
+        }
       }
+      Spacer(modifier = Modifier.height(bottomGap))
     }
   }
 
   Spacer(modifier = Modifier.height(10.dp))
 }
 
-private enum class MultiAxisSwipeAction { None, SlideDown, SlideUp, SlideLeft, SlideRight }
-private enum class MultiAxisSwipeDirection { None, Horizontal, Vertical }
-
-private data class MultiAxisSwipeState(
-  val modifier: Modifier,
-  val direction: MultiAxisSwipeDirection,
-  val progress: Float,
-  val isNegative: Boolean,
-  val offsetX: Float,
-  val offsetY: Float
-)
-
-@Composable
-private fun rememberMultiAxisSwipeActions(
-  onSlideDown: () -> Unit,
-  onSlideUp: () -> Unit,
-  onSlideLeft: () -> Unit,
-  onSlideRight: () -> Unit
-): MultiAxisSwipeState {
-  var rawOffsetX by remember { mutableStateOf(0f) }
-  var rawOffsetY by remember { mutableStateOf(0f) }
-  var directionLocked by remember { mutableStateOf<MultiAxisSwipeDirection?>(null) }
-  var action by remember { mutableStateOf(MultiAxisSwipeAction.None) }
-
-  val slopPx = with(LocalDensity.current) { 20.dp.toPx() }
-  val horizontalThresholdPx = with(LocalDensity.current) { 200.dp.toPx() }
-  val verticalThresholdPx = with(LocalDensity.current) { 75.dp.toPx() }
-
-  val updatedOnSlideDown by rememberUpdatedState(onSlideDown)
-  val updatedOnSlideUp by rememberUpdatedState(onSlideUp)
-  val updatedOnSlideLeft by rememberUpdatedState(onSlideLeft)
-  val updatedOnSlideRight by rememberUpdatedState(onSlideRight)
-
-  val animatedOffsetX by animateFloatAsState(
-    targetValue = if (action == MultiAxisSwipeAction.None) rawOffsetX else 0f,
-    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "multiAxisOffsetX"
-  )
-  val animatedOffsetY by animateFloatAsState(
-    targetValue = if (action == MultiAxisSwipeAction.None) rawOffsetY else 0f,
-    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "multiAxisOffsetY"
-  )
-  val scale by animateFloatAsState(
-    targetValue = if (action == MultiAxisSwipeAction.None) 1f else 0f,
-    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-    label = "multiAxisScale"
-  )
-
-  LaunchedEffect(action) {
-    when (action) {
-      MultiAxisSwipeAction.SlideDown -> {
-        delay(120)
-        updatedOnSlideDown()
-      }
-      MultiAxisSwipeAction.SlideUp -> {
-        delay(120)
-        updatedOnSlideUp()
-      }
-      MultiAxisSwipeAction.SlideLeft -> {
-        delay(120)
-        updatedOnSlideLeft()
-      }
-      MultiAxisSwipeAction.SlideRight -> {
-        delay(120)
-        updatedOnSlideRight()
-      }
-      MultiAxisSwipeAction.None -> Unit
-    }
-    if (action != MultiAxisSwipeAction.None) {
-      rawOffsetX = 0f
-      rawOffsetY = 0f
-      directionLocked = null
-      action = MultiAxisSwipeAction.None
-    }
-  }
-
-  val direction = directionLocked ?: MultiAxisSwipeDirection.None
-  val progress = when (direction) {
-    MultiAxisSwipeDirection.Horizontal -> (abs(rawOffsetX) / horizontalThresholdPx).coerceIn(0f, 1f)
-    MultiAxisSwipeDirection.Vertical -> (abs(rawOffsetY) / verticalThresholdPx).coerceIn(0f, 1f)
-    MultiAxisSwipeDirection.None -> 0f
-  }
-  val isNegative = when (direction) {
-    MultiAxisSwipeDirection.Horizontal -> rawOffsetX < 0f
-    MultiAxisSwipeDirection.Vertical -> rawOffsetY < 0f
-    MultiAxisSwipeDirection.None -> false
-  }
-
-  val modifier = Modifier
-    .pointerInput(Unit) {
-      detectDragGestures(
-        onDragStart = { directionLocked = null },
-        onDragCancel = {
-          rawOffsetX = 0f
-          rawOffsetY = 0f
-          directionLocked = null
-        },
-        onDragEnd = {
-          action = when {
-            rawOffsetY > verticalThresholdPx -> MultiAxisSwipeAction.SlideDown
-            rawOffsetY < -verticalThresholdPx -> MultiAxisSwipeAction.SlideUp
-            rawOffsetX > horizontalThresholdPx -> MultiAxisSwipeAction.SlideRight
-            rawOffsetX < -horizontalThresholdPx -> MultiAxisSwipeAction.SlideLeft
-            else -> MultiAxisSwipeAction.None
-          }
-          if (action == MultiAxisSwipeAction.None) {
-            rawOffsetX = 0f
-            rawOffsetY = 0f
-            directionLocked = null
-          }
-        },
-        onDrag = { change, dragAmount ->
-          if (action != MultiAxisSwipeAction.None) return@detectDragGestures
-          if (directionLocked == null) {
-            directionLocked = if (abs(dragAmount.x) > abs(dragAmount.y)) {
-              MultiAxisSwipeDirection.Horizontal
-            } else {
-              MultiAxisSwipeDirection.Vertical
-            }
-          }
-          when (directionLocked) {
-            MultiAxisSwipeDirection.Horizontal -> {
-              rawOffsetX += dragAmount.x
-              change.consumePositionChange()
-            }
-            MultiAxisSwipeDirection.Vertical -> {
-              rawOffsetY += dragAmount.y * 0.5f
-              if (abs(rawOffsetY) > slopPx) {
-                change.consumePositionChange()
-              }
-            }
-            else -> Unit
-          }
-        }
-      )
-    }
-    .graphicsLayer(
-      translationX = animatedOffsetX,
-      translationY = animatedOffsetY,
-      scaleX = scale,
-      scaleY = scale
-    )
-
-  return MultiAxisSwipeState(
-    modifier = modifier,
-    direction = direction,
-    progress = progress,
-    isNegative = isNegative,
-    offsetX = animatedOffsetX,
-    offsetY = animatedOffsetY
-  )
-}
 
 @Composable
 private fun BottomSumBar(
