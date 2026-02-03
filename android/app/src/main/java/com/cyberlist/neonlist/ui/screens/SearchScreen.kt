@@ -30,6 +30,7 @@ import com.cyberlist.neonlist.AppViewModel
 import com.cyberlist.neonlist.ui.NeonColorMap
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
+import com.cyberlist.neonlist.ui.LocalStrings
 import com.cyberlist.neonlist.ui.components.NeonScaffold
 
 @Composable
@@ -40,6 +41,7 @@ fun SearchScreen(
 ) {
   val lists by viewModel.lists.collectAsState()
   val items by viewModel.items.collectAsState()
+  val strings = LocalStrings.current
 
   var query by remember { mutableStateOf("") }
 
@@ -48,7 +50,7 @@ fun SearchScreen(
   val matchedItems = if (q.isEmpty()) emptyList() else items.filter { it.text.lowercase().contains(q) }
 
   NeonScaffold(
-    title = "Search",
+    title = strings.search,
     showBack = true,
     onBack = onBack
   ) { innerPadding ->
@@ -62,14 +64,14 @@ fun SearchScreen(
       OutlinedTextField(
         value = query,
         onValueChange = { query = it },
-        placeholder = { Text("Search lists and items...") },
+        placeholder = { Text(strings.searchPlaceholder) },
         modifier = Modifier.fillMaxWidth()
       )
 
       Spacer(modifier = Modifier.height(20.dp))
 
       if (matchedLists.isNotEmpty()) {
-        Text("MATCHING LISTS", color = NeonPrimary, style = MaterialTheme.typography.labelSmall)
+        Text(strings.matchingLists, color = NeonPrimary, style = MaterialTheme.typography.labelSmall)
         Spacer(modifier = Modifier.height(8.dp))
         matchedLists.forEach { list ->
           Row(
@@ -95,7 +97,7 @@ fun SearchScreen(
 
       if (matchedItems.isNotEmpty()) {
         Spacer(modifier = Modifier.height(12.dp))
-        Text("MATCHING ITEMS", color = NeonPrimary, style = MaterialTheme.typography.labelSmall)
+        Text(strings.matchingItems, color = NeonPrimary, style = MaterialTheme.typography.labelSmall)
         Spacer(modifier = Modifier.height(8.dp))
         matchedItems.forEach { item ->
           val parent = lists.find { it.id == item.listId } ?: return@forEach
@@ -131,7 +133,7 @@ fun SearchScreen(
 
       if (q.isNotEmpty() && matchedLists.isEmpty() && matchedItems.isEmpty()) {
         Spacer(modifier = Modifier.height(24.dp))
-        Text("NO MATCHES FOUND", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+        Text(strings.noMatchesFound, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
       }
     }
   }

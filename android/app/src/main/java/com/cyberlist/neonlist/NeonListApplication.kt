@@ -14,7 +14,7 @@ class NeonListApplication : Application() {
   override fun onCreate() {
     super.onCreate()
     val db = NeonDatabase.getInstance(this)
-    repository = Repository(db.listDao(), db.itemDao())
+    repository = Repository(this, db.listDao(), db.itemDao())
 
     CoroutineScope(Dispatchers.IO).launch {
       repository.seedIfEmpty()

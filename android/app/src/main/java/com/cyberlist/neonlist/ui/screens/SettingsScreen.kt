@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.cyberlist.neonlist.AppViewModel
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
+import com.cyberlist.neonlist.ui.LocalStrings
 import com.cyberlist.neonlist.ui.components.NeonScaffold
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -47,8 +48,10 @@ fun SettingsScreen(
 ) {
   val lists by viewModel.lists.collectAsState()
   val items by viewModel.items.collectAsState()
+  val currentLanguage by viewModel.currentLanguage.collectAsState()
   val scope = rememberCoroutineScope()
   val context = LocalContext.current
+  val strings = LocalStrings.current
 
   val exportLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.CreateDocument("application/json")
@@ -61,7 +64,7 @@ fun SettingsScreen(
   }
 
   NeonScaffold(
-    title = "Settings",
+    title = strings.settings,
     showBack = true,
     onBack = onBack
   ) { innerPadding ->
@@ -72,13 +75,13 @@ fun SettingsScreen(
         .consumeWindowInsets(innerPadding)
         .padding(16.dp)
     ) {
-      SectionCard(title = "APPEARANCE") {
+      SectionCard(title = strings.appearance) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Text("Theme", style = MaterialTheme.typography.bodyLarge)
+          Text(strings.theme, style = MaterialTheme.typography.bodyLarge)
           Row {
             Icon(Icons.Filled.NightsStay, contentDescription = null, tint = NeonPrimary)
             Spacer(modifier = Modifier.width(8.dp))
@@ -86,12 +89,35 @@ fun SettingsScreen(
           }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Currently locked to Cyberpunk Dark Mode.", color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
+        Text(strings.themeLockedNote, color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
       }
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      SectionCard(title = "DATA") {
+      SectionCard(title = strings.language.uppercase()) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          listOf("en" to "English", "it" to "Italiano", "si" to "සිංහල").forEach { (code, name) ->
+            androidx.compose.material3.FilterChip(
+              selected = currentLanguage == code,
+              onClick = { viewModel.setLanguage(code) },
+              label = { Text(name) },
+              colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                selectedContainerColor = NeonPrimary,
+                selectedLabelColor = Color.Black,
+                labelColor = Color.White,
+                containerColor = Color.White.copy(alpha = 0.05f)
+              )
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      SectionCard(title = strings.data) {
         Row(
           modifier = Modifier
             .fillMaxWidth()
@@ -102,8 +128,8 @@ fun SettingsScreen(
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
           Column {
-            Text("Export Backup", style = MaterialTheme.typography.bodyLarge)
-            Text("Save your lists as JSON file", color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
+            Text(strings.exportBackup, style = MaterialTheme.typography.bodyLarge)
+            Text(strings.exportBackupNote, color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
           }
           Icon(Icons.Filled.Download, contentDescription = null, tint = NeonMutedForeground)
         }
@@ -114,22 +140,22 @@ fun SettingsScreen(
           val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
           exportLauncher.launch("neonlist-backup-$date.json")
         }) {
-          Text("Export Backup", color = NeonPrimary)
+          Text(strings.exportBackup, color = NeonPrimary)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-          StatBox(label = "LISTS", value = lists.size.toString())
-          StatBox(label = "ITEMS", value = items.size.toString())
+          StatBox(label = strings.lists, value = lists.size.toString())
+          StatBox(label = strings.items, value = items.size.toString())
         }
       }
 
       Spacer(modifier = Modifier.height(24.dp))
 
       Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("NEON LIST", color = Color.White.copy(alpha = 0.1f), style = MaterialTheme.typography.titleLarge)
-        Text("v1.0.0 // ANDROID BUILD", color = Color.White.copy(alpha = 0.2f), style = MaterialTheme.typography.bodySmall)
+        Text(strings.neonList, color = Color.White.copy(alpha = 0.1f), style = MaterialTheme.typography.titleLarge)
+        Text("v1.0.0 // ${strings.androidBuild}", color = Color.White.copy(alpha = 0.2f), style = MaterialTheme.typography.bodySmall)
       }
     }
   }

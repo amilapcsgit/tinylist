@@ -101,6 +101,7 @@ import com.cyberlist.neonlist.ui.NeonBorder
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
+import com.cyberlist.neonlist.ui.LocalStrings
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
@@ -140,6 +141,7 @@ fun ListDetailScreen(
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItems, selectedIds)
   val history by viewModel.historyState.collectAsState()
+  val strings = LocalStrings.current
 
   val headerSharedState = sharedTransitionScope.rememberSharedContentState(key = "list-$listId")
   val headerContainerModifier = with(sharedTransitionScope) {
@@ -156,8 +158,8 @@ fun ListDetailScreen(
     headerModifier = headerContainerModifier,
     actions = {
       if (history.isNotEmpty()) {
-        NeonIconButton(onClick = { viewModel.undo() }, label = "Undo") {
-          Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo", tint = NeonPrimary)
+        NeonIconButton(onClick = { viewModel.undo() }, label = strings.undo) {
+          Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = strings.undo, tint = NeonPrimary)
         }
       }
       NeonIconButton(onClick = { menuOpen = true }, label = "Menu") {
@@ -170,15 +172,15 @@ fun ListDetailScreen(
           .background(NeonCard)
           .clip(RoundedCornerShape(16.dp))
       ) {
-        DropdownMenuItem(text = { Text("Clear Selection", color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.clearSelection, color = Color.White) }, onClick = {
           menuOpen = false
           selectedIds = emptySet()
         })
-        DropdownMenuItem(text = { Text("Clear Completed", color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.clearCompleted, color = Color.White) }, onClick = {
           menuOpen = false
           viewModel.clearCompleted(list.id)
         })
-        DropdownMenuItem(text = { Text("Duplicate List", color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.duplicateList, color = Color.White) }, onClick = {
           menuOpen = false
           viewModel.duplicateList(list.id)
         })
@@ -208,7 +210,7 @@ fun ListDetailScreen(
           modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
               contentAlignment = Alignment.Center
             ) {
-              Text("EMPTY LIST", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+              Text(strings.emptyList, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
             }
           } else {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -269,7 +271,7 @@ fun ListDetailScreen(
       containerColor = NeonPrimary,
       contentColor = Color.Black
     ) {
-      Icon(Icons.Filled.Add, contentDescription = "Add")
+      Icon(Icons.Filled.Add, contentDescription = strings.addItem)
     }
   }
 
@@ -279,7 +281,7 @@ fun ListDetailScreen(
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
       textContentColor = Color.White,
-      title = { Text("New Item", style = MaterialTheme.typography.titleLarge) },
+      title = { Text(strings.newItem, style = MaterialTheme.typography.titleLarge) },
       text = {
         Column {
           ColorGrid(selected = newItemColor, onSelect = { newItemColor = it })
@@ -287,7 +289,7 @@ fun ListDetailScreen(
           OutlinedTextField(
             value = newItemText,
             onValueChange = { newItemText = it },
-            placeholder = { Text("What needs to be done?") },
+            placeholder = { Text(strings.whatNeedsToBeDone) },
             modifier = Modifier.fillMaxWidth(),
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
             colors = OutlinedTextFieldDefaults.colors(
@@ -316,12 +318,12 @@ fun ListDetailScreen(
             contentColor = Color.Black
           )
         ) {
-          Text("ADD ITEM", style = MaterialTheme.typography.titleMedium)
+          Text(strings.addItem, style = MaterialTheme.typography.titleMedium)
         }
       },
       dismissButton = {
         TextButton(onClick = { isAdding = false }) {
-          Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+          Text(strings.cancel, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
         }
       }
     )
@@ -333,7 +335,7 @@ fun ListDetailScreen(
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
       textContentColor = Color.White,
-      title = { Text("Delete Item?", style = MaterialTheme.typography.titleLarge) },
+      title = { Text(strings.deleteItemQuestion, style = MaterialTheme.typography.titleLarge) },
       text = { Text("\"${deleteTarget?.text}\" will be permanently removed.", style = MaterialTheme.typography.bodyLarge) },
       confirmButton = {
         androidx.compose.material3.Button(
@@ -346,12 +348,12 @@ fun ListDetailScreen(
             contentColor = Color.White
           )
         ) {
-          Text("DELETE", style = MaterialTheme.typography.titleMedium)
+          Text(strings.delete, style = MaterialTheme.typography.titleMedium)
         }
       },
       dismissButton = {
         TextButton(onClick = { deleteTarget = null }) {
-          Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+          Text(strings.cancel, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
         }
       }
     )
@@ -363,7 +365,7 @@ fun ListDetailScreen(
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
       textContentColor = Color.White,
-      title = { Text("Edit Item", style = MaterialTheme.typography.titleLarge) },
+      title = { Text(strings.editItem, style = MaterialTheme.typography.titleLarge) },
       text = {
         Column {
           ColorGrid(selected = editColor, onSelect = { editColor = it })
@@ -371,7 +373,7 @@ fun ListDetailScreen(
           OutlinedTextField(
             value = editText,
             onValueChange = { editText = it },
-            placeholder = { Text("Update item text") },
+            placeholder = { Text(strings.updateItemText) },
             modifier = Modifier.fillMaxWidth(),
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
             colors = OutlinedTextFieldDefaults.colors(
@@ -400,12 +402,12 @@ fun ListDetailScreen(
             contentColor = Color.Black
           )
         ) {
-          Text("SAVE", style = MaterialTheme.typography.titleMedium)
+          Text(strings.save, style = MaterialTheme.typography.titleMedium)
         }
       },
       dismissButton = {
         TextButton(onClick = { editTarget = null }) {
-          Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+          Text(strings.cancel, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
         }
       }
     )
@@ -514,9 +516,10 @@ private fun TaskRow(
         val swipeDirection = swipeState.direction
         val swipeProgress = swipeState.progress
 
+        val strings = LocalStrings.current
         if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
           val isDelete = swipeState.isNegative
-          val label = if (isDelete) "Delete" else "Edit"
+          val hintLabel = if (isDelete) strings.delete else strings.editItem
           val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
           val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
           Row(
@@ -529,7 +532,7 @@ private fun TaskRow(
           ) {
             if (swipeProgress > 0f) {
               Text(
-                label.uppercase(),
+                hintLabel.uppercase(),
                 color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
               )
             }
@@ -538,7 +541,7 @@ private fun TaskRow(
 
         if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
           val isDuplicate = swipeState.isNegative
-          val hintText = if (isDuplicate) "DUPLICATE" else "ADD ITEM"
+          val hintText = if (isDuplicate) strings.duplicate else strings.addItem
           val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
           val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
 
@@ -637,6 +640,7 @@ private fun BottomSumBar(
   onClearSelection: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val strings = LocalStrings.current
   Box(
     modifier = Modifier
       .then(modifier)
@@ -653,7 +657,7 @@ private fun BottomSumBar(
     ) {
       Column {
         Text(
-          if (selectionMode) "SELECTED SUM" else "TOTAL SUM",
+          if (selectionMode) strings.selectedSum else strings.totalSum,
           color = NeonMutedForeground,
           style = MaterialTheme.typography.labelSmall
         )
@@ -664,7 +668,7 @@ private fun BottomSumBar(
             style = MaterialTheme.typography.displayMedium
           )
           Spacer(modifier = Modifier.width(6.dp))
-          Text("($count items)", color = NeonMutedForeground, fontSize = 12.sp)
+          Text("(${strings.itemsCount(count)})", color = NeonMutedForeground, fontSize = 12.sp)
         }
       }
       if (selectionMode) {

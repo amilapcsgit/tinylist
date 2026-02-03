@@ -44,6 +44,7 @@ import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.DisplayFont
+import com.cyberlist.neonlist.ui.LocalStrings
 
 @Composable
 fun NeonScaffold(
@@ -101,6 +102,7 @@ private fun HeaderBar(
   headerModifier: Modifier,
   actions: @Composable RowScope.() -> Unit
 ) {
+  val strings = LocalStrings.current
   Row(
     modifier = Modifier
       .then(headerModifier)
@@ -114,8 +116,8 @@ private fun HeaderBar(
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
       if (showBack) {
-        NeonIconButton(onClick = onBack, label = "Back") {
-          Icon(NeonIcons.Back, contentDescription = "Back", tint = NeonPrimary)
+        NeonIconButton(onClick = onBack, label = strings.back) {
+          Icon(NeonIcons.Back, contentDescription = strings.back, tint = NeonPrimary)
         }
         Spacer(modifier = Modifier.width(8.dp))
       }
@@ -138,14 +140,14 @@ private fun HeaderBar(
 
       if (onSearch != null) {
         Spacer(modifier = Modifier.width(8.dp))
-        NeonIconButton(onClick = onSearch, label = "Search") {
-          Icon(NeonIcons.Search, contentDescription = "Search", tint = NeonMutedForeground)
+        NeonIconButton(onClick = onSearch, label = strings.search) {
+          Icon(NeonIcons.Search, contentDescription = strings.search, tint = NeonMutedForeground)
         }
       }
       if (onSettings != null) {
         Spacer(modifier = Modifier.width(8.dp))
-        NeonIconButton(onClick = onSettings, label = "Settings") {
-          Icon(NeonIcons.Settings, contentDescription = "Settings", tint = NeonMutedForeground)
+        NeonIconButton(onClick = onSettings, label = strings.settings) {
+          Icon(NeonIcons.Settings, contentDescription = strings.settings, tint = NeonMutedForeground)
         }
       }
     }
