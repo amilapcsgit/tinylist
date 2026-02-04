@@ -1,6 +1,9 @@
 package com.cyberlist.neonlist.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -24,8 +27,16 @@ import com.cyberlist.neonlist.ui.screens.SettingsScreen
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NeonListApp(viewModel: AppViewModel) {
   val navController = rememberNavController()
+  val language by viewModel.currentLanguage.collectAsState()
 
-  SharedTransitionLayout(
+  val strings = when (language) {
+    "it" -> ItStrings
+    "si" -> SiStrings
+    else -> EnStrings
+  }
+
+  CompositionLocalProvider(LocalStrings provides strings) {
+    SharedTransitionLayout(
     modifier = Modifier
       .fillMaxSize()
       .systemBarsPadding()
@@ -75,4 +86,5 @@ fun NeonListApp(viewModel: AppViewModel) {
       }
     }
   }
+}
 }

@@ -26,6 +26,8 @@ sealed class HistoryEntry {
 class AppViewModel(private val repository: Repository) : ViewModel() {
   private val sortMode = MutableStateFlow(SortMode.MANUAL)
   private val history = MutableStateFlow<List<HistoryEntry>>(emptyList())
+   private val _language = MutableStateFlow(repository.getSavedLanguage() ?: java.util.Locale.getDefault().language)
+  val currentLanguage: StateFlow<String> = _language
 
   val lists: StateFlow<List<ListEntity>> = repository.lists
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -51,6 +53,13 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
 
   fun setSortMode(mode: SortMode) {
     sortMode.value = mode
+  }
+
+  fun setLanguage(code: String) {
+    _language.value = code
+    viewModelScope.launch {
+      repository.saveLanguage(code)
+    }
   }
 
   fun addList(title: String, color: String) {
