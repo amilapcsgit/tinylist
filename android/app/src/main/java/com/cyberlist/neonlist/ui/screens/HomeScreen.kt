@@ -92,6 +92,7 @@ import com.cyberlist.neonlist.ui.NeonCard
 import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
+import com.cyberlist.neonlist.ui.LocalStrings
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
@@ -114,6 +115,7 @@ fun HomeScreen(
   val items by viewModel.items.collectAsState()
   val sortMode by viewModel.currentSortMode.collectAsState()
   val history by viewModel.historyState.collectAsState()
+  val strings = LocalStrings.current
 
   var isCreating by remember { mutableStateOf(false) }
   var newTitle by remember { mutableStateOf("") }
@@ -143,20 +145,20 @@ fun HomeScreen(
   }
 
   NeonScaffold(
-    title = "Neon Lists",
+    title = strings.homeTitle,
     showBack = false,
     onBack = {},
     onSearch = onOpenSearch,
     onSettings = onOpenSettings,
     actions = {
       if (history.isNotEmpty()) {
-        NeonIconButton(onClick = { viewModel.undo() }, label = "Undo") {
-          Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo", tint = NeonPrimary)
+        NeonIconButton(onClick = { viewModel.undo() }, label = strings.undo) {
+          Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = strings.undo, tint = NeonPrimary)
         }
       }
       Spacer(modifier = Modifier.width(4.dp))
-      NeonIconButton(onClick = { sortMenuOpen = true }, label = "Sort") {
-        Icon(Icons.Filled.MoreVert, contentDescription = "Sort", tint = NeonMutedForeground)
+      NeonIconButton(onClick = { sortMenuOpen = true }, label = strings.sort) {
+        Icon(Icons.Filled.MoreVert, contentDescription = strings.sort, tint = NeonMutedForeground)
       }
       DropdownMenu(
         expanded = sortMenuOpen,
@@ -166,21 +168,21 @@ fun HomeScreen(
           .clip(RoundedCornerShape(16.dp))
       ) {
         DropdownMenuItem(
-          text = { Text("Sort A-Z", color = Color.White) },
+          text = { Text(strings.sortAZ, color = Color.White) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.AZ)
           }
         )
         DropdownMenuItem(
-          text = { Text("Sort by Completion", color = Color.White) },
+          text = { Text(strings.sortByCompletion, color = Color.White) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.COMPLETION)
           }
         )
         DropdownMenuItem(
-          text = { Text("Manual Order", color = Color.White) },
+          text = { Text(strings.manualOrder, color = Color.White) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.MANUAL)
@@ -246,8 +248,8 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 120.dp),
             horizontalAlignment = Alignment.CenterHorizontally
           ) {
-            Text("NO DATA", style = MaterialTheme.typography.titleMedium, color = NeonMutedForeground)
-            Text("Tap + to initialize new list", style = MaterialTheme.typography.bodySmall, color = NeonMutedForeground)
+            Text(strings.noData, style = MaterialTheme.typography.titleMedium, color = NeonMutedForeground)
+            Text(strings.tapPlusToInitialize, style = MaterialTheme.typography.bodySmall, color = NeonMutedForeground)
           }
         }
 
@@ -261,7 +263,7 @@ fun HomeScreen(
         containerColor = NeonPrimary,
         contentColor = Color.Black
       ) {
-        Icon(Icons.Filled.Add, contentDescription = "Add")
+        Icon(Icons.Filled.Add, contentDescription = strings.addList)
       }
     }
   }
@@ -430,9 +432,10 @@ private fun ListCard(
         val swipeDirection = swipeState.direction
         val swipeProgress = swipeState.progress
 
+        val strings = LocalStrings.current
         if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
           val isDelete = swipeState.isNegative
-          val label = if (isDelete) "Delete" else "Edit"
+          val hintLabel = if (isDelete) strings.delete else strings.editList // Using editList as generic edit
           val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
           val bgColor = baseBg.copy(alpha = baseBg.alpha * swipeProgress)
           Row(
@@ -445,7 +448,7 @@ private fun ListCard(
           ) {
             if (swipeProgress > 0f) {
               Text(
-                label.uppercase(),
+                hintLabel.uppercase(),
                 color = if (isDelete) Color(0xFFFF6B6B) else Color(0xFF7AB5FF)
               )
             }
@@ -454,7 +457,7 @@ private fun ListCard(
 
         if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
           val isDuplicate = swipeState.isNegative
-          val hintText = if (isDuplicate) "DUPLICATE" else "ADD LIST"
+          val hintText = if (isDuplicate) strings.duplicate else strings.addList
           val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
           val hintIcon = if (isDuplicate) Icons.Filled.ContentCopy else Icons.Filled.Add
 
@@ -548,18 +551,19 @@ private fun EditListDialog(
   var title by remember { mutableStateOf(list.title) }
   var color by remember { mutableStateOf(list.color) }
 
+  val strings = LocalStrings.current
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
     textContentColor = Color.White,
-    title = { Text("Edit List", style = MaterialTheme.typography.titleLarge) },
+    title = { Text(strings.editList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
         OutlinedTextField(
           value = title,
           onValueChange = { title = it },
-          label = { Text("Title") },
+          label = { Text(strings.title) },
           modifier = Modifier.fillMaxWidth(),
           textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
           colors = OutlinedTextFieldDefaults.colors(
@@ -590,12 +594,12 @@ private fun EditListDialog(
           contentColor = Color.Black
         )
       ) {
-        Text("SAVE", style = MaterialTheme.typography.titleMedium)
+        Text(strings.save, style = MaterialTheme.typography.titleMedium)
       }
     },
     dismissButton = {
       TextButton(onClick = onDismiss) {
-        Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+        Text(strings.cancel, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
       }
     }
   )
@@ -610,12 +614,13 @@ private fun AddListDialog(
   onDismiss: () -> Unit,
   onSave: () -> Unit
 ) {
+  val strings = LocalStrings.current
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
     textContentColor = Color.White,
-    title = { Text("New List", style = MaterialTheme.typography.titleLarge) },
+    title = { Text(strings.newList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
         ColorGrid(selected = color, onSelect = onColorChange)
@@ -623,7 +628,7 @@ private fun AddListDialog(
         OutlinedTextField(
           value = title,
           onValueChange = onTitleChange,
-          placeholder = { Text("LIST TITLE") },
+          placeholder = { Text(strings.title.uppercase()) },
           modifier = Modifier.fillMaxWidth(),
           textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
           colors = OutlinedTextFieldDefaults.colors(
@@ -646,12 +651,12 @@ private fun AddListDialog(
           contentColor = Color.Black
         )
       ) {
-        Text("CREATE", style = MaterialTheme.typography.titleMedium)
+        Text(strings.create, style = MaterialTheme.typography.titleMedium)
       }
     },
     dismissButton = {
       TextButton(onClick = onDismiss) {
-        Text("CANCEL", color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
+        Text(strings.cancel, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
       }
     }
   )

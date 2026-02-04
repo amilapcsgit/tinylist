@@ -1,23 +1,21 @@
-# TinyList (NeonList) - Android Revival
+# NeonList - Cyberpunk Multilingual List Manager
 
-A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app, rebuilt with a cyber-neon UI, new gesture controls, offline-first storage, and safer data handling.
+NeonList is a modern Jetpack Compose app for fast list and item tracking with a cyber‑neon UI, rich gestures, and multilingual support. It is no longer a copy of the original tiny‑list app: it’s a fully evolved, feature‑rich native experience built for current Android devices.
 
 ## What It Is
-- Classic list manager feel, updated for Android 12+.
-- Neon/cyberpunk interface inspired by the original tiny-list style.
-- Offline-first: data stays on-device.
-- Modern UX: swipe gestures, selection sum, quick search, export.
+- Modern, neon‑styled list manager for Android 12+.
+- Multilingual UI (with language selection in Settings).
+- Offline‑first: data stays on device.
+- Gesture‑forward UX with selection sums, quick search, and export.
 
 ## Core Features
 - Create, edit, delete lists and items
 - Manual reorder of lists
-- Swipe:
-  - Right on item -> edit
-  - Left on item -> delete
-  - Double-tap item -> mark done
-- Single tap -> select for sum
-- Selection mode with numeric sum from item text
+- Gesture actions (edit/delete/duplicate) and quick selection
+- Double‑tap item to mark done
+- Selection mode with numeric sum extracted from item text
 - Search across lists/items
+- Multilingual settings
 - Export JSON backup
 
 ## Safety & Privacy
@@ -28,12 +26,22 @@ A modern Android (Jetpack Compose) recreation of an old Android 2.5-era list app
 ## Project Layout
 - `android/` - Native Android app (Compose, Room)
 - `source/` - Original web app source (preserved for reference)
-- `docs/screenshots/` - App screenshots used in this README
+- `screenshots/` - App screenshots used in this README
 
 ## Screenshots
-![Home screen](docs/screenshots/home.png)
-![List detail](docs/screenshots/list-detail.png)
-![Menu](docs/screenshots/menu.png)
+<p align="center">
+  <img src="screenshots/home_lists_overview.jpg" alt="Home overview" width="30%" />
+  <img src="screenshots/home_action_edit.jpg" alt="Home edit action" width="30%" />
+  <img src="screenshots/home_action_delete.jpg" alt="Home delete action" width="30%" />
+</p>
+<p align="center">
+  <img src="screenshots/home_action_duplicate.jpg" alt="Home duplicate action" width="30%" />
+  <img src="screenshots/list_detail_items.jpg" alt="List detail items" width="30%" />
+  <img src="screenshots/list_detail_menu.jpg" alt="List detail menu" width="30%" />
+</p>
+<p align="center">
+  <img src="screenshots/settings_screen.jpg" alt="Settings screen" width="30%" />
+</p>
 
 ## Getting Started (Contributors)
 1. Install JDK 17 and Android Studio.
@@ -64,10 +72,4 @@ cd android
 3. Run the `app` configuration on a device or emulator (Android 12+).
 
 ## Notes
-This project intentionally mirrors the visual and interaction model of an older Android 2.5 list app, but upgrades it with modern Compose UI, improved gesture controls, and safer local storage practices.
-
-## Recent UI Improvements (v0.2)
-- Unified Home + ListDetail card styling and typography
-- Neon dialogs for add/edit list and item with improved readability
-- Selection highlight only behind text with animated color fill
-- Clearer overflow menus with dark backgrounds and white text
+NeonList focuses on a polished, cyber‑neon experience with responsive gestures, offline‑first storage, and a multilingual UI designed for real‑world use.

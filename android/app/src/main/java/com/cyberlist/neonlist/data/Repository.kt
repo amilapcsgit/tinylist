@@ -8,10 +8,14 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
+import android.content.Context
+
 class Repository(
+  private val context: Context,
   private val listDao: ListDao,
   private val itemDao: ItemDao
 ) {
+  private val prefs = context.getSharedPreferences("neonlist_prefs", Context.MODE_PRIVATE)
   private val json = Json { prettyPrint = true }
   val lists: Flow<List<ListEntity>> = listDao.observeLists()
   val items: Flow<List<ItemEntity>> = itemDao.observeItems()
@@ -75,6 +79,12 @@ class Repository(
   suspend fun clearCompleted(listId: String) = itemDao.clearCompleted(listId)
 
   suspend fun reorderLists(lists: List<ListEntity>) = listDao.upsertAll(lists)
+
+  fun getSavedLanguage(): String? = prefs.getString("language", null)
+
+  fun saveLanguage(code: String) {
+    prefs.edit().putString("language", code).apply()
+  }
 
   suspend fun exportJson(currentLists: List<ListEntity>, currentItems: List<ItemEntity>): String = withContext(Dispatchers.Default) {
     val payload = ExportPayload(
