@@ -1,75 +1,92 @@
-# NeonList - Cyberpunk Multilingual List Manager
+> [!IMPORTANT]
+> **SYSTEM STATUS: ONLINE.** NeonList is a high-performance, multilingual list architect for Android 12+. Built for speed, efficiency, and aesthetics.
 
-NeonList is a modern Jetpack Compose app for fast list and item tracking with a cyber‑neon UI, rich gestures, and multilingual support. It is no longer a copy of the original tiny‑list app: it’s a fully evolved, feature‑rich native experience built for current Android devices.
+---
 
-## What It Is
-- Modern, neon‑styled list manager for Android 12+.
-- Multilingual UI (with language selection in Settings).
-- Offline‑first: data stays on device.
-- Gesture‑forward UX with selection sums, quick search, and export.
+## 🌌 The Vision
+NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpunk UI**, it leverages **Material 3** and **Jetpack Compose** to deliver a fluid, haptic-rich experience.
 
-## Core Features
-- Create, edit, delete lists and items
-- Manual reorder of lists
-- Gesture actions (edit/delete/duplicate) and quick selection
-- Double‑tap item to mark done
-- Selection mode with numeric sum extracted from item text
-- Search across lists/items
-- Multilingual settings
-- Export JSON backup
+- 💎 **Neon Aesthetics**: High-contrast, vibrant visuals that pop.
+- 🌍 **Global Access**: Support for English, Italian, and Sinhala.
+- 🛡️ **Zero Trace**: 100% offline-first storage with Room.
+- ⚡ **Flow UX**: Gesture-driven interactions for power users.
 
-## Safety & Privacy
-- No network calls: data is stored locally with Room.
-- Exports are explicit and require user action (Storage Access Framework).
-- No analytics or background uploads.
+---
 
-## Project Layout
-- `android/` - Native Android app (Compose, Room)
-- `source/` - Original web app source (preserved for reference)
-- `screenshots/` - App screenshots used in this README
+## 📸 Visual Deck
+<details>
+<summary>📂 <b>CLICK TO EXPAND SCREENSHOTS</b></summary>
 
-## Screenshots
-<p align="center">
-  <img src="screenshots/home_lists_overview.jpg" alt="Home overview" width="30%" />
-  <img src="screenshots/home_action_edit.jpg" alt="Home edit action" width="30%" />
-  <img src="screenshots/home_action_delete.jpg" alt="Home delete action" width="30%" />
-</p>
-<p align="center">
-  <img src="screenshots/home_action_duplicate.jpg" alt="Home duplicate action" width="30%" />
-  <img src="screenshots/list_detail_items.jpg" alt="List detail items" width="30%" />
-  <img src="screenshots/list_detail_menu.jpg" alt="List detail menu" width="30%" />
-</p>
-<p align="center">
-  <img src="screenshots/settings_screen.jpg" alt="Settings screen" width="30%" />
-</p>
+| Home Overview | Edit Action | Delete Action |
+|:---:|:---:|:---:|
+| ![Home overview](screenshots/home_lists_overview.jpg) | ![Home edit action](screenshots/home_action_edit.jpg) | ![Home delete action](screenshots/home_action_delete.jpg) |
 
-## Getting Started (Contributors)
-1. Install JDK 17 and Android Studio.
-2. Open the `android/` folder in Android Studio and let Gradle sync.
-3. Run the `app` configuration on an Android 12+ emulator/device.
-4. If you change UI code, run:
-   ```bash
-   ./gradlew :app:compileDebugKotlin
-   ```
-5. Keep UI updates consistent with the neon/tiny-list visual style.
+| Duplicate Action | List Detail | List Menu |
+|:---:|:---:|:---:|
+| ![Home duplicate action](screenshots/home_action_duplicate.jpg) | ![List detail items](screenshots/list_detail_items.jpg) | ![List detail menu](screenshots/list_detail_menu.jpg) |
 
-## Build & Run
-### Requirements
-- JDK 17
-- Android Studio (recommended)
-- Android SDK (compileSdk 34, minSdk 31)
+| Settings Screen |
+|:---:|
+| ![Settings screen](screenshots/settings_screen.jpg) |
 
-### Build (CLI)
-From repo root:
-```bash
-cd android
-./gradlew assembleDebug
+</details>
+
+---
+
+## 🛠️ Technical Architecture
+
+NeonList follows the modern **MVVM** pattern, ensuring a clean decoupling of logic and presentation.
+
+```mermaid
+graph TD
+    UI["🌌 Jetpack Compose UI"] --> VM["⚡ AppViewModel"]
+    VM --> Repo["📂 Repository"]
+    Repo --> DB[("💾 Room DB")]
+    Repo --> Prefs["⚙️ SharedPreferences"]
+    
+    subgraph Screens
+        Home[Home]
+        Detail[Detail]
+        Search[Search]
+        Settings[Settings]
+    end
+    
+    UI --- Screens
 ```
 
-### Run (Android Studio)
-1. Open the `android/` folder in Android Studio.
-2. Let Gradle sync.
-3. Run the `app` configuration on a device or emulator (Android 12+).
+> [!TIP]
+> **Developer Insight:** For a deep dive into the code geometry, check out [ARCHITECTURE.md](file:///c:/Users/Amilapcs/source/repos/Tinylist-antigravity/tinylist/android/ARCHITECTURE.md).
 
-## Notes
-NeonList focuses on a polished, cyber‑neon experience with responsive gestures, offline‑first storage, and a multilingual UI designed for real‑world use.
+---
+
+## 🚀 Core Modules
+- **Dynamic Flux**: Create, edit, and reorder lists with zero latency.
+- **Neural Summation**: 
+  - **Double-tap** to execute items.
+  - **Auto-Scanner**: Extracts numeric values from item strings (e.g., "Credits 500") for real-time aggregation.
+- **Cyber-Gestures**:
+  - `SWIPE_LEFT` ➔ **PURGE**
+  - `SWIPE_RIGHT` ➔ **REWRITE**
+  - `SWIPE_UP` ➔ **CLONE**
+  - `SWIPE_DOWN` ➔ **INITIATE**
+- **Temporal Undo**: Multi-stack history rollback for all data mutations.
+- **Vector Search**: Real-time cross-index matching.
+
+---
+
+## ⚙️ Deployment
+### System Requirements
+- **Core**: JDK 17
+- **Terminal**: Android Studio Hedwig+
+- **API Level**: 31 (Android 12) to 34+
+
+### Build Protocol
+```bash
+./gradlew :app:assembleDebug
+```
+
+---
+
+## 📝 Transmission Note
+NeonList is optimized for real-world utility with a professional cyberpunk finish.
+t storage, and a multilingual UI designed for real‑world use.
