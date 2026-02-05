@@ -9,6 +9,7 @@
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)](LICENSE)
 
 ![Stars](https://img.shields.io/badge/⭐_1k+-Stars-9C27B0?style=for-the-badge)
 ![Forks](https://img.shields.io/badge/🔱_500+-Forks-00BCD4?style=for-the-badge)
@@ -36,9 +37,9 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/tinylist)
 [![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com)
-[![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://yourwebsite.com)
+[![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://amilaprasad.it)
 
-*© 2024 NeonList. All rights reserved. Built with passion.*
+*© 2026 L.J. Amila Prasad Perera. All rights reserved. Built with passion.*
 
 </div>
 
@@ -210,16 +211,15 @@ Before contributing, please review:
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This software is protected by a **Custom License**. It is **Free for Personal Use** but restricted for commercial distribution. See the [LICENSE](LICENSE) file for details.
 
-```
-MIT License
+```text
+Copyright (c) 2026 L.J. Amila Prasad Perera
 
-Copyright (c) 2024 NeonList Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
+1. NON-COMMERCIAL USE ONLY
+2. NO REDISTRIBUTION
+3. ATTRIBUTION REQUIRED
+4. NO WARRANTY
 ```
 
 ---
@@ -244,10 +244,9 @@ Special thanks to:
 
 ## 📞 Contact
 
-- 📧 **Email**: [your.email@example.com](mailto:your.email@example.com)
+- 📧 **Email**: [amilapcsgit@gmail.com](mailto:amilapcsgit@gmail.com)
 - 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/tinylist/issues)
-- 🐦 **Twitter**: [@YourHandle](https://twitter.com/yourhandle)
-- 🌐 **Website**: [yourwebsite.com](https://yourwebsite.com)
+- 🌐 **Website**: [amilaprasad.it](https://amilaprasad.it)
 
 ---
 
@@ -257,7 +256,7 @@ Special thanks to:
 
 **NeonList** - *Optimized for real-world utility with a professional cyberpunk finish*
 
-Made with 💜 by the NeonList Team | Powered by Kotlin & Jetpack Compose
+Made with 💜 by **L.J. Amila Prasad Perera** | Powered by Kotlin & Jetpack Compose
 
 ---
 
