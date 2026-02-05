@@ -93,6 +93,7 @@ import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.LocalStrings
+import com.cyberlist.neonlist.ui.LocalNeonIsDark
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
@@ -167,22 +168,22 @@ fun HomeScreen(
           .background(NeonCard)
           .clip(RoundedCornerShape(16.dp))
       ) {
-        DropdownMenuItem(
-          text = { Text(strings.sortAZ, color = Color.White) },
+      DropdownMenuItem(
+          text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.AZ)
           }
         )
         DropdownMenuItem(
-          text = { Text(strings.sortByCompletion, color = Color.White) },
+          text = { Text(strings.sortByCompletion, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.COMPLETION)
           }
         )
         DropdownMenuItem(
-          text = { Text(strings.manualOrder, color = Color.White) },
+          text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
             viewModel.setSortMode(SortMode.MANUAL)
@@ -355,6 +356,8 @@ private fun ListCard(
   animatedVisibilityScope: AnimatedContentScope
 ) {
   val color = NeonColorMap[list.color] ?: NeonPrimary
+  val primaryTextColor = MaterialTheme.colorScheme.onSurface
+  val isDarkTheme = LocalNeonIsDark.current
   val density = LocalDensity.current
   val delayMillis = entranceDelayMs.coerceAtLeast(0)
   val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
@@ -500,7 +503,9 @@ private fun ListCard(
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
             .padding(horizontal = 18.dp)
-            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .then(
+              if (isDarkTheme) Modifier.shadow(10.dp, RoundedCornerShape(20.dp)) else Modifier
+            )
             .clickable(
               interactionSource = interactionSource,
               indication = null
@@ -519,7 +524,7 @@ private fun ListCard(
             Text(
               list.title,
               style = MaterialTheme.typography.titleLarge,
-              color = Color.White
+              color = primaryTextColor
             )
           }
           Box(
@@ -552,11 +557,13 @@ private fun EditListDialog(
   var color by remember { mutableStateOf(list.color) }
 
   val strings = LocalStrings.current
+  val dialogTextColor = MaterialTheme.colorScheme.onSurface
+  val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
-    textContentColor = Color.White,
+    textContentColor = dialogTextColor,
     title = { Text(strings.editList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
@@ -565,16 +572,16 @@ private fun EditListDialog(
           onValueChange = { title = it },
           label = { Text(strings.title) },
           modifier = Modifier.fillMaxWidth(),
-          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
           colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = NeonPrimary,
             unfocusedBorderColor = NeonMutedForeground,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
+            focusedTextColor = dialogTextColor,
+            unfocusedTextColor = dialogTextColor,
             focusedLabelColor = NeonPrimary,
             unfocusedLabelColor = NeonMutedForeground,
-            focusedPlaceholderColor = NeonMutedForeground,
-            unfocusedPlaceholderColor = NeonMutedForeground,
+            focusedPlaceholderColor = dialogPlaceholderColor,
+            unfocusedPlaceholderColor = dialogPlaceholderColor,
             cursorColor = NeonPrimary
           )
         )
@@ -615,11 +622,13 @@ private fun AddListDialog(
   onSave: () -> Unit
 ) {
   val strings = LocalStrings.current
+  val dialogTextColor = MaterialTheme.colorScheme.onSurface
+  val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
-    textContentColor = Color.White,
+    textContentColor = dialogTextColor,
     title = { Text(strings.newList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
@@ -630,14 +639,14 @@ private fun AddListDialog(
           onValueChange = onTitleChange,
           placeholder = { Text(strings.title.uppercase()) },
           modifier = Modifier.fillMaxWidth(),
-          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
           colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = NeonPrimary,
             unfocusedBorderColor = NeonMutedForeground,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedPlaceholderColor = NeonMutedForeground,
-            unfocusedPlaceholderColor = NeonMutedForeground,
+            focusedTextColor = dialogTextColor,
+            unfocusedTextColor = dialogTextColor,
+            focusedPlaceholderColor = dialogPlaceholderColor,
+            unfocusedPlaceholderColor = dialogPlaceholderColor,
             cursorColor = NeonPrimary
           )
         )

@@ -28,6 +28,8 @@ import com.cyberlist.neonlist.ui.screens.SettingsScreen
 fun NeonListApp(viewModel: AppViewModel) {
   val navController = rememberNavController()
   val language by viewModel.currentLanguage.collectAsState()
+  val themeMode by viewModel.themeMode.collectAsState()
+  val isDarkTheme = themeMode != "light"
 
   val strings = when (language) {
     "it" -> ItStrings
@@ -36,6 +38,7 @@ fun NeonListApp(viewModel: AppViewModel) {
   }
 
   CompositionLocalProvider(LocalStrings provides strings) {
+    NeonTheme(isDark = isDarkTheme) {
     SharedTransitionLayout(
     modifier = Modifier
       .fillMaxSize()
@@ -86,5 +89,6 @@ fun NeonListApp(viewModel: AppViewModel) {
       }
     }
   }
+    }
 }
 }

@@ -13,6 +13,7 @@ interface Strings {
   val sortAZ: String
   val sortByCompletion: String
   val manualOrder: String
+  val sortDefault: String
   val noData: String
   val tapPlusToInitialize: String
   val newList: String
@@ -44,6 +45,8 @@ interface Strings {
   val settings: String
   val appearance: String
   val theme: String
+  val themeDark: String
+  val themeLight: String
   val themeLockedNote: String
   val data: String
   val exportBackup: String
@@ -54,6 +57,11 @@ interface Strings {
   val androidBuild: String
   val language: String
   val back: String
+  val creditsLicense: String
+  val acknowledgments: String
+  val license: String
+  val openGithub: String
+  val creditsFallback: String
 
   // Search Screen
   val search: String
@@ -70,6 +78,7 @@ object EnStrings : Strings {
   override val sortAZ = "Sort A-Z"
   override val sortByCompletion = "Sort by Completion"
   override val manualOrder = "Manual Order"
+  override val sortDefault = "Default Order"
   override val noData = "NO DATA"
   override val tapPlusToInitialize = "Tap + to initialize new list"
   override val newList = "New List"
@@ -99,7 +108,9 @@ object EnStrings : Strings {
   override val settings = "Settings"
   override val appearance = "APPEARANCE"
   override val theme = "Theme"
-  override val themeLockedNote = "Currently locked to Cyberpunk Dark Mode."
+  override val themeDark = "Dark"
+  override val themeLight = "Light"
+  override val themeLockedNote = "Switch between Dark and Light Neon."
   override val data = "DATA"
   override val exportBackup = "Export Backup"
   override val exportBackupNote = "Save your lists as JSON file"
@@ -109,6 +120,11 @@ object EnStrings : Strings {
   override val androidBuild = "ANDROID BUILD"
   override val language = "Language"
   override val back = "Back"
+  override val creditsLicense = "CREDITS & LICENSE"
+  override val acknowledgments = "ACKNOWLEDGMENTS"
+  override val license = "LICENSE"
+  override val openGithub = "Open GitHub Profile"
+  override val creditsFallback = "Credits and license information."
 
   override val search = "Search"
   override val searchPlaceholder = "Search lists and items..."
@@ -124,6 +140,7 @@ object ItStrings : Strings {
   override val sortAZ = "Ordina A-Z"
   override val sortByCompletion = "Ordina per Completamento"
   override val manualOrder = "Ordine Manuale"
+  override val sortDefault = "Ordine Predefinito"
   override val noData = "NESSUN DATO"
   override val tapPlusToInitialize = "Tocca + per creare una nuova lista"
   override val newList = "Nuova Lista"
@@ -153,7 +170,9 @@ object ItStrings : Strings {
   override val settings = "Impostazioni"
   override val appearance = "ASPETTO"
   override val theme = "Tema"
-  override val themeLockedNote = "Attualmente bloccato in modalità Dark Cyberpunk."
+  override val themeDark = "Scuro"
+  override val themeLight = "Chiaro"
+  override val themeLockedNote = "Passa tra Neon scuro e chiaro."
   override val data = "DATI"
   override val exportBackup = "Esporta Backup"
   override val exportBackupNote = "Salva le tue liste come file JSON"
@@ -163,6 +182,11 @@ object ItStrings : Strings {
   override val androidBuild = "BUILD ANDROID"
   override val language = "Lingua"
   override val back = "Indietro"
+  override val creditsLicense = "CREDITI E LICENZA"
+  override val acknowledgments = "RINGRAZIAMENTI"
+  override val license = "LICENZA"
+  override val openGithub = "Apri profilo GitHub"
+  override val creditsFallback = "Crediti e informazioni sulla licenza."
 
   override val search = "Cerca"
   override val searchPlaceholder = "Cerca liste ed elementi..."
@@ -178,6 +202,7 @@ object SiStrings : Strings {
   override val sortAZ = "අකාරාදී පිළිවෙලට"
   override val sortByCompletion = "අවසන් කළ ප්‍රමාණය අනුව"
   override val manualOrder = "අභිරුචි පිළිවෙල"
+  override val sortDefault = "Default Order"
   override val noData = "දත්ත නොමැත"
   override val tapPlusToInitialize = "නව ලැයිස්තුවක් සෑදීමට + තට්ටු කරන්න"
   override val newList = "නව ලැයිස්තුව"
@@ -207,7 +232,9 @@ object SiStrings : Strings {
   override val settings = "සැකසුම්"
   override val appearance = "පෙනුම"
   override val theme = "තේමාව"
-  override val themeLockedNote = "දැනට සයිබර්පන්ක් අඳුරු මාදිලියට සීමා වී ඇත."
+  override val themeDark = "අඳුරු"
+  override val themeLight = "එළිමහන්"
+  override val themeLockedNote = "අඳුරු සහ එළිමහන් නියෝන් අතර මාරු කරන්න."
   override val data = "දත්ත"
   override val exportBackup = "දත්ත පිටපතක් ලබාගන්න"
   override val exportBackupNote = "ඔබේ ලැයිස්තු JSON ගොනුවක් ලෙස සුරකින්න"
@@ -217,6 +244,11 @@ object SiStrings : Strings {
   override val androidBuild = "ඇන්ඩ්‍රොයිඩ් සංස්කරණය"
   override val language = "භාෂාව"
   override val back = "ආපසු"
+  override val creditsLicense = "CREDITS & LICENSE"
+  override val acknowledgments = "ACKNOWLEDGMENTS"
+  override val license = "LICENSE"
+  override val openGithub = "Open GitHub Profile"
+  override val creditsFallback = "Credits and license information."
 
   override val search = "සොයන්න"
   override val searchPlaceholder = "ලැයිස්තු සහ අයිතම සොයන්න..."
