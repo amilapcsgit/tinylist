@@ -38,6 +38,7 @@ android {
   buildTypes {
     release {
       isMinifyEnabled = false
+      isShrinkResources = false
       signingConfig = if (keystorePath.isNullOrBlank()) {
         signingConfigs.getByName("debug")
       } else {
@@ -52,6 +53,7 @@ android {
 
   buildFeatures {
     compose = true
+    buildConfig = true
   }
 
     compileOptions {
@@ -63,9 +65,15 @@ android {
     jvmTarget = "17"
     freeCompilerArgs += "-Xcontext-receivers"
   }
-    dependenciesInfo {
+  dependenciesInfo {
         includeInApk = true
     }
+}
+
+kapt {
+  arguments {
+    arg("room.schemaLocation", "$projectDir/schemas")
+  }
 }
 
 dependencies {
@@ -93,6 +101,7 @@ dependencies {
   implementation("androidx.datastore:datastore-preferences:1.1.1")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+  implementation("com.jakewharton.timber:timber:5.0.1")
 
   implementation("sh.calvin.reorderable:reorderable:3.0.0")
 

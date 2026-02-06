@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -48,9 +50,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
@@ -102,16 +106,21 @@ import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.LocalStrings
+import com.cyberlist.neonlist.ui.LocalNeonIsDark
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
 import com.cyberlist.neonlist.ui.components.MultiAxisSwipeDirection
 import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
 
 private val numericRegex = Regex("(-?(?:\\d+[.,])?\\d+)(?=\\D*$)")
+private enum class ItemSortMode { CREATED, AZ, MANUAL }
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
@@ -125,7 +134,7 @@ fun ListDetailScreen(
   val lists by viewModel.lists.collectAsState()
   val items by viewModel.items.collectAsState()
   val list = lists.find { it.id == listId } ?: return
-  val listItems = items.filter { it.listId == listId }.sortedBy { it.createdAt }
+  val listItemsRaw = items.filter { it.listId == listId }
   val listColor = NeonColorMap[list.color] ?: NeonPrimary
 
   var selectedIds by remember { mutableStateOf(setOf<String>()) }
@@ -137,11 +146,39 @@ fun ListDetailScreen(
   var editTarget by remember { mutableStateOf<ItemEntity?>(null) }
   var editText by remember { mutableStateOf("") }
   var editColor by remember { mutableStateOf("green") }
+  var itemSortMode by remember { mutableStateOf(ItemSortMode.CREATED) }
 
   val selectionMode = selectedIds.isNotEmpty()
-  val sumData = computeSum(listItems, selectedIds)
+  val sumData = computeSum(listItemsRaw, selectedIds)
   val history by viewModel.historyState.collectAsState()
   val strings = LocalStrings.current
+  val manualItems = remember { mutableStateListOf<ItemEntity>() }
+  val manualListState = rememberLazyListState()
+  val reorderState: ReorderableLazyListState =
+    rememberReorderableLazyListState(manualListState) { from, to ->
+      manualItems.add(to.index, manualItems.removeAt(from.index))
+    }
+
+  LaunchedEffect(listItemsRaw, itemSortMode) {
+    if (itemSortMode == ItemSortMode.MANUAL) {
+      manualItems.clear()
+      manualItems.addAll(listItemsRaw.sortedBy { it.order })
+    }
+  }
+
+  LaunchedEffect(itemSortMode) {
+    if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
+    snapshotFlow { manualItems.map { it.id } }.collect {
+      val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
+      viewModel.reorderItems(updated)
+    }
+  }
+
+  val listItems = when (itemSortMode) {
+    ItemSortMode.AZ -> listItemsRaw.sortedBy { it.text.lowercase() }
+    ItemSortMode.MANUAL -> manualItems
+    ItemSortMode.CREATED -> listItemsRaw.sortedBy { it.createdAt }
+  }
 
   val headerSharedState = sharedTransitionScope.rememberSharedContentState(key = "list-$listId")
   val headerContainerModifier = with(sharedTransitionScope) {
@@ -172,15 +209,27 @@ fun ListDetailScreen(
           .background(NeonCard)
           .clip(RoundedCornerShape(16.dp))
       ) {
-        DropdownMenuItem(text = { Text(strings.clearSelection, color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
+          menuOpen = false
+          itemSortMode = ItemSortMode.AZ
+        })
+        DropdownMenuItem(text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
+          menuOpen = false
+          itemSortMode = ItemSortMode.MANUAL
+        })
+        DropdownMenuItem(text = { Text(strings.sortDefault, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
+          menuOpen = false
+          itemSortMode = ItemSortMode.CREATED
+        })
+        DropdownMenuItem(text = { Text(strings.clearSelection, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
           selectedIds = emptySet()
         })
-        DropdownMenuItem(text = { Text(strings.clearCompleted, color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.clearCompleted, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
           viewModel.clearCompleted(list.id)
         })
-        DropdownMenuItem(text = { Text(strings.duplicateList, color = Color.White) }, onClick = {
+        DropdownMenuItem(text = { Text(strings.duplicateList, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
           viewModel.duplicateList(list.id)
         })
@@ -213,41 +262,87 @@ fun ListDetailScreen(
               Text(strings.emptyList, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
             }
           } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-              itemsIndexed(
-                items = listItems,
-                key = { _, item -> item.id }
-              ) { index, item ->
-                TaskRow(
-                  modifier = Modifier.animateItem(
-                    fadeInSpec = spring(),
-                    fadeOutSpec = spring()
-                  ),
-                  item = item,
-                  color = listColor,
-                  isSelected = selectedIds.contains(item.id),
-                  entranceDelayMs = index * 50,
-                  onSlideDown = {
-                    newItemText = ""
-                    newItemColor = list.color
-                    isAdding = true
-                  },
-                  onSlideUp = { viewModel.addItem(list.id, item.text, item.color) },
-                  onToggleSelection = {
-                    selectedIds = if (selectedIds.contains(item.id)) {
-                      selectedIds - item.id
-                    } else {
-                      selectedIds + item.id
-                    }
-                  },
-                  onToggleDone = { viewModel.toggleItem(item) },
-                  onEdit = {
-                    editTarget = item
-                    editText = item.text
-                    editColor = item.color
-                  },
-                  onDelete = { deleteTarget = item }
-                )
+            if (itemSortMode == ItemSortMode.MANUAL) {
+              LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                state = manualListState
+              ) {
+                itemsIndexed(
+                  items = manualItems,
+                  key = { _, item -> item.id }
+                ) { index, item ->
+                  ReorderableItem(state = reorderState, key = item.id) { _ ->
+                    TaskRow(
+                      modifier = Modifier.animateItem(
+                        fadeInSpec = spring(),
+                        fadeOutSpec = spring()
+                      ),
+                      item = item,
+                      color = listColor,
+                      isSelected = selectedIds.contains(item.id),
+                      entranceDelayMs = index * 50,
+                      enableSwipe = false,
+                      showDragHandle = true,
+                      dragHandleModifier = Modifier.longPressDraggableHandle(),
+                      onSlideDown = {},
+                      onSlideUp = {},
+                      onToggleSelection = {
+                        selectedIds = if (selectedIds.contains(item.id)) {
+                          selectedIds - item.id
+                        } else {
+                          selectedIds + item.id
+                        }
+                      },
+                      onToggleDone = { viewModel.toggleItem(item) },
+                      onEdit = {
+                        editTarget = item
+                        editText = item.text
+                        editColor = item.color
+                      },
+                      onDelete = { deleteTarget = item }
+                    )
+                  }
+                }
+              }
+            } else {
+              LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                itemsIndexed(
+                  items = listItems,
+                  key = { _, item -> item.id }
+                ) { index, item ->
+                  TaskRow(
+                    modifier = Modifier.animateItem(
+                      fadeInSpec = spring(),
+                      fadeOutSpec = spring()
+                    ),
+                    item = item,
+                    color = listColor,
+                    isSelected = selectedIds.contains(item.id),
+                    entranceDelayMs = index * 50,
+                    enableSwipe = true,
+                    showDragHandle = false,
+                    onSlideDown = {
+                      newItemText = ""
+                      newItemColor = list.color
+                      isAdding = true
+                    },
+                    onSlideUp = { viewModel.addItem(list.id, item.text, item.color) },
+                    onToggleSelection = {
+                      selectedIds = if (selectedIds.contains(item.id)) {
+                        selectedIds - item.id
+                      } else {
+                        selectedIds + item.id
+                      }
+                    },
+                    onToggleDone = { viewModel.toggleItem(item) },
+                    onEdit = {
+                      editTarget = item
+                      editText = item.text
+                      editColor = item.color
+                    },
+                    onDelete = { deleteTarget = item }
+                  )
+                }
               }
             }
           }
@@ -276,11 +371,13 @@ fun ListDetailScreen(
   }
 
   if (isAdding) {
+    val dialogTextColor = MaterialTheme.colorScheme.onSurface
+    val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
     AlertDialog(
       onDismissRequest = { isAdding = false },
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
-      textContentColor = Color.White,
+      textContentColor = dialogTextColor,
       title = { Text(strings.newItem, style = MaterialTheme.typography.titleLarge) },
       text = {
         Column {
@@ -291,14 +388,14 @@ fun ListDetailScreen(
             onValueChange = { newItemText = it },
             placeholder = { Text(strings.whatNeedsToBeDone) },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
             colors = OutlinedTextFieldDefaults.colors(
               focusedBorderColor = NeonPrimary,
               unfocusedBorderColor = NeonMutedForeground,
-              focusedTextColor = Color.White,
-              unfocusedTextColor = Color.White,
-              focusedPlaceholderColor = NeonMutedForeground,
-              unfocusedPlaceholderColor = NeonMutedForeground,
+              focusedTextColor = dialogTextColor,
+              unfocusedTextColor = dialogTextColor,
+              focusedPlaceholderColor = dialogPlaceholderColor,
+              unfocusedPlaceholderColor = dialogPlaceholderColor,
               cursorColor = NeonPrimary
             )
           )
@@ -330,11 +427,12 @@ fun ListDetailScreen(
   }
 
   if (deleteTarget != null) {
+    val dialogTextColor = MaterialTheme.colorScheme.onSurface
     AlertDialog(
       onDismissRequest = { deleteTarget = null },
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
-      textContentColor = Color.White,
+      textContentColor = dialogTextColor,
       title = { Text(strings.deleteItemQuestion, style = MaterialTheme.typography.titleLarge) },
       text = { Text("\"${deleteTarget?.text}\" will be permanently removed.", style = MaterialTheme.typography.bodyLarge) },
       confirmButton = {
@@ -345,7 +443,7 @@ fun ListDetailScreen(
           },
           colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFE94B3C),
-            contentColor = Color.White
+            contentColor = MaterialTheme.colorScheme.onPrimary
           )
         ) {
           Text(strings.delete, style = MaterialTheme.typography.titleMedium)
@@ -360,11 +458,13 @@ fun ListDetailScreen(
   }
 
   if (editTarget != null) {
+    val dialogTextColor = MaterialTheme.colorScheme.onSurface
+    val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
     AlertDialog(
       onDismissRequest = { editTarget = null },
       containerColor = NeonCard,
       titleContentColor = NeonPrimary,
-      textContentColor = Color.White,
+      textContentColor = dialogTextColor,
       title = { Text(strings.editItem, style = MaterialTheme.typography.titleLarge) },
       text = {
         Column {
@@ -375,14 +475,14 @@ fun ListDetailScreen(
             onValueChange = { editText = it },
             placeholder = { Text(strings.updateItemText) },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
             colors = OutlinedTextFieldDefaults.colors(
               focusedBorderColor = NeonPrimary,
               unfocusedBorderColor = NeonMutedForeground,
-              focusedTextColor = Color.White,
-              unfocusedTextColor = Color.White,
-              focusedPlaceholderColor = NeonMutedForeground,
-              unfocusedPlaceholderColor = NeonMutedForeground,
+              focusedTextColor = dialogTextColor,
+              unfocusedTextColor = dialogTextColor,
+              focusedPlaceholderColor = dialogPlaceholderColor,
+              unfocusedPlaceholderColor = dialogPlaceholderColor,
               cursorColor = NeonPrimary
             )
           )
@@ -422,6 +522,9 @@ private fun TaskRow(
   color: Color,
   isSelected: Boolean,
   entranceDelayMs: Int = 0,
+  enableSwipe: Boolean = true,
+  showDragHandle: Boolean = false,
+  dragHandleModifier: Modifier = Modifier,
   onSlideDown: () -> Unit,
   onSlideUp: () -> Unit,
   onToggleSelection: () -> Unit,
@@ -429,13 +532,17 @@ private fun TaskRow(
   onEdit: () -> Unit,
   onDelete: () -> Unit
 ) {
-  val swipeState = rememberMultiAxisSwipeActions(
-    onSlideDown = onSlideDown,
-    onSlideUp = onSlideUp,
-    onSlideLeft = onDelete,
-    onSlideRight = onEdit
-  )
-  val rowModifier = modifier.then(swipeState.modifier)
+  val swipeState = if (enableSwipe) {
+    rememberMultiAxisSwipeActions(
+      onSlideDown = onSlideDown,
+      onSlideUp = onSlideUp,
+      onSlideLeft = onDelete,
+      onSlideRight = onEdit
+    )
+  } else {
+    null
+  }
+  val rowModifier = if (enableSwipe && swipeState != null) modifier.then(swipeState.modifier) else modifier
 
   val density = LocalDensity.current
   val delayMillis = entranceDelayMs.coerceAtLeast(0)
@@ -461,7 +568,8 @@ private fun TaskRow(
     remember { MutableTransitionState(false).apply { targetState = true } }
   val interactionSource = remember { MutableInteractionSource() }
   val pressed by interactionSource.collectIsPressedAsState()
-  val isLongPressed = swipeState.isLongPressed
+  val isLongPressed = swipeState?.isLongPressed == true
+  val isDarkTheme = LocalNeonIsDark.current
   val scale by animateFloatAsState(
     targetValue = if (pressed || isLongPressed) 0.96f else 1f,
     animationSpec = spring(
@@ -472,13 +580,13 @@ private fun TaskRow(
   )
 
   val topGap by animateDpAsState(
-    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY < 0)
+    targetValue = if (swipeState != null && swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY < 0)
       with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
     else 0.dp,
     label = "topGap"
   )
   val bottomGap by animateDpAsState(
-    targetValue = if (swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY > 0)
+    targetValue = if (swipeState != null && swipeState.direction == MultiAxisSwipeDirection.Vertical && swipeState.offsetY > 0)
       with(density) { (abs(swipeState.offsetY) * 0.25f).toDp() }.coerceAtMost(32.dp)
     else 0.dp,
     label = "bottomGap"
@@ -492,8 +600,9 @@ private fun TaskRow(
   ) {
     val itemColor = NeonColorMap[item.color] ?: color
     val bg = NeonCard
+    val baseTextColor = MaterialTheme.colorScheme.onSurface
     val textColor by animateColorAsState(
-      targetValue = if (isSelected && item.isDone) Color.White else if (item.isDone) NeonMutedForeground else Color.White,
+      targetValue = if (isSelected && item.isDone) baseTextColor else if (item.isDone) NeonMutedForeground else baseTextColor,
       label = "itemText"
     )
     val highlightAlpha by animateFloatAsState(
@@ -513,11 +622,11 @@ private fun TaskRow(
           .height(76.dp)
           .clipToBounds()
       ) {
-        val swipeDirection = swipeState.direction
-        val swipeProgress = swipeState.progress
+        val swipeDirection = swipeState?.direction ?: MultiAxisSwipeDirection.None
+        val swipeProgress = swipeState?.progress ?: 0f
 
         val strings = LocalStrings.current
-        if (swipeDirection == MultiAxisSwipeDirection.Horizontal) {
+        if (swipeState != null && swipeDirection == MultiAxisSwipeDirection.Horizontal) {
           val isDelete = swipeState.isNegative
           val hintLabel = if (isDelete) strings.delete else strings.editItem
           val baseBg = if (isDelete) Color(0x330B0B) else Color(0x1A2345)
@@ -539,7 +648,7 @@ private fun TaskRow(
           }
         }
 
-        if (swipeDirection == MultiAxisSwipeDirection.Vertical) {
+        if (swipeState != null && swipeDirection == MultiAxisSwipeDirection.Vertical) {
           val isDuplicate = swipeState.isNegative
           val hintText = if (isDuplicate) strings.duplicate else strings.addItem
           val hintColor = if (isDuplicate) NeonMutedForeground else NeonPrimary
@@ -574,7 +683,9 @@ private fun TaskRow(
             .background(bg)
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
-            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .then(
+              if (isDarkTheme) Modifier.shadow(10.dp, RoundedCornerShape(20.dp)) else Modifier
+            )
             .combinedClickable(
               interactionSource = interactionSource,
               indication = null,
@@ -614,12 +725,23 @@ private fun TaskRow(
               )
             }
           }
-          AnimatedVisibility(
-            visible = item.isDone,
-            enter = scaleIn(),
-            exit = scaleOut()
-          ) {
-            Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            AnimatedVisibility(
+              visible = item.isDone,
+              enter = scaleIn(),
+              exit = scaleOut()
+            ) {
+              Icon(Icons.Filled.Check, contentDescription = "Done", tint = Color(0xFF69F0AE))
+            }
+            if (showDragHandle) {
+              Spacer(modifier = Modifier.width(8.dp))
+              Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag",
+                tint = NeonMutedForeground,
+                modifier = dragHandleModifier
+              )
+            }
           }
         }
         }
@@ -641,12 +763,18 @@ private fun BottomSumBar(
   modifier: Modifier = Modifier
 ) {
   val strings = LocalStrings.current
+  val isDarkTheme = LocalNeonIsDark.current
+  val barBackground = if (isDarkTheme) {
+    NeonBackground.copy(alpha = 0.95f)
+  } else {
+    Color(0xFF0B0B12)
+  }
   Box(
     modifier = Modifier
       .then(modifier)
       .fillMaxWidth()
       .height(72.dp)
-      .background(NeonBackground.copy(alpha = 0.95f))
+      .background(barBackground)
       .padding(horizontal = 16.dp),
     contentAlignment = Alignment.CenterStart
   ) {

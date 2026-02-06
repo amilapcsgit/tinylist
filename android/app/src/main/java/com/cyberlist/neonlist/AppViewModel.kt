@@ -26,8 +26,10 @@ sealed class HistoryEntry {
 class AppViewModel(private val repository: Repository) : ViewModel() {
   private val sortMode = MutableStateFlow(SortMode.MANUAL)
   private val history = MutableStateFlow<List<HistoryEntry>>(emptyList())
-   private val _language = MutableStateFlow(repository.getSavedLanguage() ?: java.util.Locale.getDefault().language)
+  private val _language = MutableStateFlow(repository.getSavedLanguage() ?: java.util.Locale.getDefault().language)
+  private val _themeMode = MutableStateFlow(repository.getSavedTheme() ?: "dark")
   val currentLanguage: StateFlow<String> = _language
+  val themeMode: StateFlow<String> = _themeMode
 
   val lists: StateFlow<List<ListEntity>> = repository.lists
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -62,6 +64,17 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
     }
   }
 
+  fun setThemeMode(mode: String) {
+    _themeMode.value = mode
+    viewModelScope.launch {
+      repository.saveTheme(mode)
+    }
+  }
+
+  fun toggleTheme() {
+    setThemeMode(if (_themeMode.value == "dark") "light" else "dark")
+  }
+
   fun addList(title: String, color: String) {
     viewModelScope.launch {
       repository.addList(title, color, lists.value.size)
@@ -87,6 +100,12 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
   fun reorderLists(newOrder: List<ListEntity>) {
     viewModelScope.launch {
       repository.reorderLists(newOrder)
+    }
+  }
+
+  fun reorderItems(newOrder: List<ItemEntity>) {
+    viewModelScope.launch {
+      repository.reorderItems(newOrder)
     }
   }
 
@@ -146,7 +165,7 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
         )
       }
 
-      repository.updateList(newList)
+      repository.addListEntity(newList)
       newItems.forEach { repository.updateItem(it) }
     }
   }

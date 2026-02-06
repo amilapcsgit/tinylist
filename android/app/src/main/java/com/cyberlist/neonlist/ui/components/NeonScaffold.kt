@@ -45,6 +45,7 @@ import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.DisplayFont
 import com.cyberlist.neonlist.ui.LocalStrings
+import com.cyberlist.neonlist.ui.LocalNeonIsDark
 
 @Composable
 fun NeonScaffold(
@@ -63,7 +64,9 @@ fun NeonScaffold(
       .fillMaxSize()
       .background(Brush.verticalGradient(listOf(NeonBackground, NeonSecondary)))
   ) {
-    ScanlineOverlay()
+    if (LocalNeonIsDark.current) {
+      ScanlineOverlay()
+    }
 
     Scaffold(
       containerColor = Color.Transparent,
@@ -103,13 +106,18 @@ private fun HeaderBar(
   actions: @Composable RowScope.() -> Unit
 ) {
   val strings = LocalStrings.current
+  val headerBackground = if (LocalNeonIsDark.current) {
+    NeonBackground.copy(alpha = 0.8f)
+  } else {
+    Color(0xFF0B0B12)
+  }
   Row(
     modifier = Modifier
       .then(headerModifier)
       .fillMaxWidth()
       .height(64.dp)
       .clipToBounds()
-      .background(NeonBackground.copy(alpha = 0.8f))
+      .background(headerBackground)
       .padding(horizontal = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.SpaceBetween
@@ -179,11 +187,12 @@ object NeonIcons {
 @Composable
 fun NeonIconButton(onClick: () -> Unit, label: String, content: @Composable () -> Unit) {
   androidx.compose.material3.IconButton(onClick = onClick) {
+    val tintSurface = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
     Box(
       modifier = Modifier
         .size(40.dp)
         .clip(CircleShape)
-        .background(Color.White.copy(alpha = 0.04f)),
+        .background(tintSurface),
       contentAlignment = Alignment.Center
     ) {
       content()

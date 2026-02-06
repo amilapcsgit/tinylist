@@ -1,17 +1,66 @@
 package com.cyberlist.neonlist.ui
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-val NeonBackground = Color(0xFF12121C)
-val NeonForeground = Color(0xFFE6F3F2)
-val NeonCard = Color(0xFF1B1B29)
+data class NeonPalette(
+  val background: Color,
+  val foreground: Color,
+  val card: Color,
+  val secondary: Color,
+  val muted: Color,
+  val mutedForeground: Color,
+  val border: Color
+)
+
+internal val DarkPalette = NeonPalette(
+  background = Color(0xFF12121C),
+  foreground = Color(0xFFE6F3F2),
+  card = Color(0xFF1B1B29),
+  secondary = Color(0xFF2A2A3A),
+  muted = Color(0xFF38384A),
+  mutedForeground = Color(0xFF8A8AA6),
+  border = Color(0xFF2C2C3D)
+)
+
+internal val LightPalette = NeonPalette(
+  background = Color(0xFFF5F7FB),
+  foreground = Color(0xFF0B0F1A),
+  card = Color(0xFFFFFFFF),
+  secondary = Color(0xFFE9EEF7),
+  muted = Color(0xFFD7DEEA),
+  mutedForeground = Color(0xFF5B6475),
+  border = Color(0xFFCCD4E3)
+)
+
+val LocalNeonPalette = staticCompositionLocalOf { DarkPalette }
+
+val NeonBackground: Color
+  @Composable get() = LocalNeonPalette.current.background
+
+val NeonForeground: Color
+  @Composable get() = LocalNeonPalette.current.foreground
+
+val NeonCard: Color
+  @Composable get() = LocalNeonPalette.current.card
+
+val NeonSecondary: Color
+  @Composable get() = LocalNeonPalette.current.secondary
+
+val NeonMuted: Color
+  @Composable get() = LocalNeonPalette.current.muted
+
+val NeonMutedForeground: Color
+  @Composable get() = LocalNeonPalette.current.mutedForeground
+
+val NeonBorder: Color
+  @Composable get() = LocalNeonPalette.current.border
+
 val NeonPrimary = Color(0xFF00F5FF)
-val NeonSecondary = Color(0xFF2A2A3A)
-val NeonMuted = Color(0xFF38384A)
-val NeonMutedForeground = Color(0xFF8A8AA6)
-val NeonBorder = Color(0xFF2C2C3D)
 
 val NeonRed = Color(0xFFE94B3C)
 val NeonOrange = Color(0xFFF38B2A)
@@ -38,35 +87,73 @@ val NeonColorMap: Map<String, Color> = mapOf(
 )
 
 fun neonColorScheme(): ColorScheme {
-  return lightColorScheme(
+  return neonDarkColorScheme()
+}
+
+fun neonDarkColorScheme(): ColorScheme {
+  return darkColorScheme(
     primary = NeonPrimary,
     onPrimary = Color(0xFF0B0B12),
     primaryContainer = NeonPrimary.copy(alpha = 0.2f),
-    onPrimaryContainer = NeonForeground,
-    secondary = NeonSecondary,
-    onSecondary = NeonForeground,
-    secondaryContainer = NeonSecondary,
-    onSecondaryContainer = NeonForeground,
+    onPrimaryContainer = DarkPalette.foreground,
+    secondary = DarkPalette.secondary,
+    onSecondary = DarkPalette.foreground,
+    secondaryContainer = DarkPalette.secondary,
+    onSecondaryContainer = DarkPalette.foreground,
     tertiary = NeonPurple,
-    onTertiary = NeonForeground,
+    onTertiary = DarkPalette.foreground,
     tertiaryContainer = NeonPurple.copy(alpha = 0.2f),
-    onTertiaryContainer = NeonForeground,
-    background = NeonBackground,
-    onBackground = NeonForeground,
-    surface = NeonCard,
-    onSurface = NeonForeground,
-    surfaceVariant = NeonSecondary,
-    onSurfaceVariant = NeonMutedForeground,
+    onTertiaryContainer = DarkPalette.foreground,
+    background = DarkPalette.background,
+    onBackground = DarkPalette.foreground,
+    surface = DarkPalette.card,
+    onSurface = DarkPalette.foreground,
+    surfaceVariant = DarkPalette.secondary,
+    onSurfaceVariant = DarkPalette.mutedForeground,
     error = Color(0xFFFF4D4F),
     onError = Color.White,
     errorContainer = Color(0xFF7A1E1E),
     onErrorContainer = Color.White,
-    outline = NeonBorder,
-    outlineVariant = NeonBorder,
-    inverseSurface = NeonForeground,
-    inverseOnSurface = NeonBackground,
+    outline = DarkPalette.border,
+    outlineVariant = DarkPalette.border,
+    inverseSurface = DarkPalette.foreground,
+    inverseOnSurface = DarkPalette.background,
     inversePrimary = NeonPrimary,
     surfaceTint = NeonPrimary,
     scrim = Color(0x99000000)
+  )
+}
+
+fun neonLightColorScheme(): ColorScheme {
+  return lightColorScheme(
+    primary = NeonPrimary,
+    onPrimary = Color(0xFF001316),
+    primaryContainer = NeonPrimary.copy(alpha = 0.12f),
+    onPrimaryContainer = LightPalette.foreground,
+    secondary = LightPalette.secondary,
+    onSecondary = LightPalette.foreground,
+    secondaryContainer = LightPalette.secondary,
+    onSecondaryContainer = LightPalette.foreground,
+    tertiary = NeonPurple,
+    onTertiary = Color.White,
+    tertiaryContainer = NeonPurple.copy(alpha = 0.2f),
+    onTertiaryContainer = LightPalette.foreground,
+    background = LightPalette.background,
+    onBackground = LightPalette.foreground,
+    surface = LightPalette.card,
+    onSurface = LightPalette.foreground,
+    surfaceVariant = LightPalette.secondary,
+    onSurfaceVariant = LightPalette.mutedForeground,
+    error = Color(0xFFFF4D4F),
+    onError = Color.White,
+    errorContainer = Color(0xFFFFDAD7),
+    onErrorContainer = Color(0xFF410002),
+    outline = LightPalette.border,
+    outlineVariant = LightPalette.border,
+    inverseSurface = LightPalette.foreground,
+    inverseOnSurface = LightPalette.background,
+    inversePrimary = NeonPrimary,
+    surfaceTint = NeonPrimary,
+    scrim = Color(0x33000000)
   )
 }
