@@ -10,6 +10,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)](LICENSE)
+[![Download TinyList](https://img.shields.io/badge/Download-TinyList_1.1-00C853?style=for-the-badge&logo=android&logoColor=white)](https://github.com/amilapcsgit/tinylist/releases/download/v1.1/NeonList-1.1.apk)
 
 ![Stars](https://img.shields.io/badge/⭐_1k+-Stars-9C27B0?style=for-the-badge)
 ![Forks](https://img.shields.io/badge/🔱_500+-Forks-00BCD4?style=for-the-badge)
@@ -87,6 +88,22 @@ Download the latest release from the [Releases](releases/) page.
 
 - **Latest stable:** `NeonList-1.1.apk` (API 29+)
 - **Release notes:** [`releases/NeonList-1.1.md`](releases/NeonList-1.1.md)
+
+### Install APK (Unknown Sources)
+
+If you install the APK directly (outside Play Store), Android may block it until you allow one-time install permission for the app you downloaded with (browser or file manager).
+
+1. Tap the downloaded `NeonList-1.1.apk`.
+2. If prompted, open **Settings** and enable **Allow from this source** for that installer app.
+3. Go back and tap **Install**.
+4. (Optional) Disable **Allow from this source** again after install.
+
+### Why This Is Safe
+
+- NeonList works offline and does not require account login.
+- The app manifest does not request internet, contacts, location, camera, microphone, or storage permissions.
+- Backup export uses Android's system file picker and writes only to the location you explicitly choose.
+- Download from the official GitHub release asset to avoid tampered APK files.
 
 ---
 
