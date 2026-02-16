@@ -61,7 +61,7 @@ NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpun
 ## 📥 Installation
 
 ### System Requirements
-- **Platform**: Android 12+ (API Level 31+)
+- **Platform**: Android 10+ (API Level 29+)
 - **Development**: Android Studio Hedgehog+
 - **Build**: JDK 17
 
@@ -84,6 +84,9 @@ cd tinylist/android
 ### Download APK
 
 Download the latest release from the [Releases](releases/) page.
+
+- **Latest stable:** `NeonList-1.1.apk` (API 29+)
+- **Release notes:** [`releases/NeonList-1.1.md`](releases/NeonList-1.1.md)
 
 ---
 
