@@ -88,6 +88,8 @@ class Repository(
 
   suspend fun updateList(list: ListEntity) = listDao.update(list)
 
+  suspend fun upsertList(list: ListEntity) = listDao.upsert(list)
+
   suspend fun deleteList(listId: String) {
     listDao.deleteById(listId)
     itemDao.deleteByListId(listId)

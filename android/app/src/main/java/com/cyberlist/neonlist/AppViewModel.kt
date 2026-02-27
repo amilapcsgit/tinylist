@@ -180,7 +180,7 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
     viewModelScope.launch {
       when (entry) {
         is HistoryEntry.ListDelete -> {
-          repository.updateList(entry.list)
+          repository.upsertList(entry.list)
           entry.items.forEach { repository.updateItem(it) }
         }
         is HistoryEntry.ItemDelete -> repository.updateItem(entry.item)

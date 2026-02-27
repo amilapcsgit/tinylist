@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -21,6 +22,9 @@ interface ListDao {
 
   @Update
   suspend fun update(list: ListEntity)
+
+  @Upsert
+  suspend fun upsert(list: ListEntity)
 
   @Update
   suspend fun updateAll(lists: List<ListEntity>)
