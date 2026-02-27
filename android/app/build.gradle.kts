@@ -22,6 +22,12 @@ android {
   val keystorePassword = (project.findProperty("KEYSTORE_PASSWORD") as String?) ?: System.getenv("KEYSTORE_PASSWORD")
   val keyAlias = (project.findProperty("KEY_ALIAS") as String?) ?: System.getenv("KEY_ALIAS")
   val keyPassword = (project.findProperty("KEY_PASSWORD") as String?) ?: System.getenv("KEY_PASSWORD")
+  val isReleaseSigningConfigured =
+    !keystorePath.isNullOrBlank() &&
+      !keystorePassword.isNullOrBlank() &&
+      !keyAlias.isNullOrBlank() &&
+      !keyPassword.isNullOrBlank()
+  val isReleaseTaskRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
 
   signingConfigs {
     getByName("debug")
@@ -37,13 +43,14 @@ android {
 
   buildTypes {
     release {
+      if (isReleaseTaskRequested && !isReleaseSigningConfigured) {
+        throw GradleException(
+          "Release build requires KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD. Refusing to sign with debug."
+        )
+      }
       isMinifyEnabled = false
       isShrinkResources = false
-      signingConfig = if (keystorePath.isNullOrBlank()) {
-        signingConfigs.getByName("debug")
-      } else {
-        signingConfigs.getByName("release")
-      }
+      signingConfig = signingConfigs.getByName("release")
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
         "proguard-rules.pro"
