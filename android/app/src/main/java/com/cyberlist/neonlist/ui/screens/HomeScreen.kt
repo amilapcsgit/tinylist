@@ -102,6 +102,8 @@ import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun HomeScreen(
@@ -137,9 +139,12 @@ fun HomeScreen(
     }
   }
   LaunchedEffect(sortMode) {
-    snapshotFlow { manualLists.toList() }.collect { ordered ->
+    snapshotFlow { manualLists.map { it.id } }
+      .distinctUntilChanged()
+      .debounce(250)
+      .collect {
       if (sortMode == SortMode.MANUAL) {
-        val updated = ordered.mapIndexed { index, list -> list.copy(order = index) }
+        val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
         viewModel.reorderLists(updated)
       }
     }
