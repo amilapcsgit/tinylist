@@ -10,12 +10,14 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 import android.content.Context
+import androidx.room.withTransaction
 import timber.log.Timber
 
 class Repository(
   private val context: Context,
   private val listDao: ListDao,
-  private val itemDao: ItemDao
+  private val itemDao: ItemDao,
+  private val database: NeonDatabase
 ) {
   private val prefs = context.getSharedPreferences("neonlist_prefs", Context.MODE_PRIVATE)
   private val json = Json { prettyPrint = true }
@@ -91,8 +93,9 @@ class Repository(
   suspend fun upsertList(list: ListEntity) = listDao.upsert(list)
 
   suspend fun deleteList(listId: String) {
-    listDao.deleteById(listId)
-    itemDao.deleteByListId(listId)
+    database.withTransaction {
+      listDao.deleteById(listId)
+    }
   }
 
   suspend fun addItem(listId: String, text: String, color: String) {
