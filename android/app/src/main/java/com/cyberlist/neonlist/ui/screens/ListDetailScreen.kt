@@ -173,6 +173,8 @@ fun ListDetailScreen(
       .distinctUntilChanged()
       .debounce(250)
       .collect {
+      val needsPersist = manualItems.withIndex().any { (index, item) -> item.order != index.toLong() }
+      if (!needsPersist) return@collect
       val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
       viewModel.reorderItems(updated)
     }

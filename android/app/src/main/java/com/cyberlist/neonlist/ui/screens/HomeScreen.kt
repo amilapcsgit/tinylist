@@ -144,6 +144,8 @@ fun HomeScreen(
       .debounce(250)
       .collect {
       if (sortMode == SortMode.MANUAL) {
+        val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+        if (!needsPersist) return@collect
         val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
         viewModel.reorderLists(updated)
       }
