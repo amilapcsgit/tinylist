@@ -160,14 +160,31 @@ fun ListDetailScreen(
       manualItems.add(to.index, manualItems.removeAt(from.index))
     }
 
-  LaunchedEffect(listItemsRaw, itemSortMode) {
-    if (itemSortMode == ItemSortMode.MANUAL) {
+  LaunchedEffect(listId, listItemsRaw, itemSortMode) {
+    if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
+
+    val upstreamSorted = listItemsRaw.sortedBy { it.order }
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val upstreamIds = upstreamSorted.map { it.id }.toSet()
+    val localIds = manualItems.map { it.id }.toSet()
+
+    if (manualItems.isEmpty() || upstreamIds != localIds) {
       manualItems.clear()
-      manualItems.addAll(listItemsRaw.sortedBy { it.order })
+      manualItems.addAll(upstreamSorted)
+      return@LaunchedEffect
+    }
+
+    val merged = manualItems.mapNotNull { local ->
+      upstreamById[local.id]?.copy(order = local.order)
+    }
+
+    if (merged.size != manualItems.size || manualItems.zip(merged).any { it.first != it.second }) {
+      manualItems.clear()
+      manualItems.addAll(merged)
     }
   }
 
-  LaunchedEffect(itemSortMode) {
+  LaunchedEffect(itemSortMode, listId) {
     if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
     snapshotFlow { manualItems.map { it.id } }
       .distinctUntilChanged()
