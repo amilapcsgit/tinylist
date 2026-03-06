@@ -137,21 +137,29 @@ fun HomeScreen(
     if (sortMode != SortMode.MANUAL) return@LaunchedEffect
 
     val upstreamSorted = lists.sortedBy { it.order }
-    val upstreamById = upstreamSorted.associateBy { it.id }
-    val upstreamIds = upstreamSorted.map { it.id }.toSet()
-    val localIds = manualLists.map { it.id }.toSet()
+    val upstreamIds = upstreamSorted.map { it.id }
+    val localIds = manualLists.map { it.id }
 
-    if (manualLists.isEmpty() || upstreamIds != localIds) {
+    if (manualLists.isEmpty() || upstreamIds.toSet() != localIds.toSet()) {
       manualLists.clear()
       manualLists.addAll(upstreamSorted)
       return@LaunchedEffect
     }
 
-    val merged = manualLists.mapNotNull { local ->
-      upstreamById[local.id]?.copy(order = local.order)
+    if (upstreamIds == localIds) {
+      if (manualLists.zip(upstreamSorted).any { it.first != it.second }) {
+        manualLists.clear()
+        manualLists.addAll(upstreamSorted)
+      }
+      return@LaunchedEffect
     }
 
-    if (merged.size != manualLists.size || manualLists.zip(merged).any { it.first != it.second }) {
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val merged = localIds.mapNotNull { id ->
+      upstreamById[id]
+    }
+
+    if (merged.size == manualLists.size && manualLists.zip(merged).any { it.first != it.second }) {
       manualLists.clear()
       manualLists.addAll(merged)
     }

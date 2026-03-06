@@ -164,21 +164,29 @@ fun ListDetailScreen(
     if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
 
     val upstreamSorted = listItemsRaw.sortedBy { it.order }
-    val upstreamById = upstreamSorted.associateBy { it.id }
-    val upstreamIds = upstreamSorted.map { it.id }.toSet()
-    val localIds = manualItems.map { it.id }.toSet()
+    val upstreamIds = upstreamSorted.map { it.id }
+    val localIds = manualItems.map { it.id }
 
-    if (manualItems.isEmpty() || upstreamIds != localIds) {
+    if (manualItems.isEmpty() || upstreamIds.toSet() != localIds.toSet()) {
       manualItems.clear()
       manualItems.addAll(upstreamSorted)
       return@LaunchedEffect
     }
 
-    val merged = manualItems.mapNotNull { local ->
-      upstreamById[local.id]?.copy(order = local.order)
+    if (upstreamIds == localIds) {
+      if (manualItems.zip(upstreamSorted).any { it.first != it.second }) {
+        manualItems.clear()
+        manualItems.addAll(upstreamSorted)
+      }
+      return@LaunchedEffect
     }
 
-    if (merged.size != manualItems.size || manualItems.zip(merged).any { it.first != it.second }) {
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val merged = localIds.mapNotNull { id ->
+      upstreamById[id]
+    }
+
+    if (merged.size == manualItems.size && manualItems.zip(merged).any { it.first != it.second }) {
       manualItems.clear()
       manualItems.addAll(merged)
     }
