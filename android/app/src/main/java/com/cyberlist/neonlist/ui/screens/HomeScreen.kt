@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -343,22 +344,21 @@ private fun ReorderableLists(
     itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
       ReorderableItem(state = state, key = list.id) { _ ->
         val listItems = items.filter { it.listId == list.id }
-        Box(modifier = Modifier.longPressDraggableHandle()) {
-          ListCard(
-            list = list,
-            itemCount = listItems.size,
-            completedCount = listItems.count { it.isDone },
-            onOpen = { onOpenList(list.id) },
-            onDelete = { onDelete(list) },
-            onEdit = { onEdit(list) },
-            onDuplicate = { onDuplicate(list) },
-            onAddNew = onAddNew,
-            dragHandle = true,
-            entranceDelayMs = index * 50,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
-          )
-        }
+        ListCard(
+          list = list,
+          itemCount = listItems.size,
+          completedCount = listItems.count { it.isDone },
+          onOpen = { onOpenList(list.id) },
+          onDelete = { onDelete(list) },
+          onEdit = { onEdit(list) },
+          onDuplicate = { onDuplicate(list) },
+          onAddNew = onAddNew,
+          dragHandle = true,
+          dragHandleModifier = Modifier.longPressDraggableHandle(),
+          entranceDelayMs = index * 50,
+          sharedTransitionScope = sharedTransitionScope,
+          animatedVisibilityScope = animatedVisibilityScope
+        )
       }
     }
   }
@@ -375,6 +375,7 @@ private fun ListCard(
   onDuplicate: () -> Unit,
   onAddNew: () -> Unit,
   dragHandle: Boolean = false,
+  dragHandleModifier: Modifier = Modifier,
   entranceDelayMs: Int = 0,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedContentScope
@@ -551,16 +552,27 @@ private fun ListCard(
               color = primaryTextColor
             )
           }
-          Box(
-            modifier = Modifier
-              .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
-              .padding(horizontal = 12.dp, vertical = 6.dp)
-          ) {
-            Text(
-              "${completedCount}/${itemCount}",
-              color = color,
-              style = MaterialTheme.typography.titleMedium
-            )
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+              Text(
+                "${completedCount}/${itemCount}",
+                color = color,
+                style = MaterialTheme.typography.titleMedium
+              )
+            }
+            if (dragHandle) {
+              Spacer(modifier = Modifier.width(8.dp))
+              Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag",
+                tint = NeonMutedForeground,
+                modifier = dragHandleModifier
+              )
+            }
           }
         }
       }
