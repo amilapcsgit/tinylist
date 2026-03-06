@@ -52,7 +52,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -148,8 +147,8 @@ fun ListDetailScreen(
   var editTarget by remember { mutableStateOf<ItemEntity?>(null) }
   var editText by remember { mutableStateOf("") }
   var editColor by remember { mutableStateOf("green") }
-  var itemSortMode by remember { mutableStateOf(ItemSortMode.CREATED) }
-  var isManualReorderMode by rememberSaveable { mutableStateOf(false) }
+  var itemSortMode by remember { mutableStateOf(ItemSortMode.MANUAL) }
+  var isManualReorderMode by remember { mutableStateOf(false) }
 
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItemsRaw, selectedIds)
@@ -173,6 +172,10 @@ fun ListDetailScreen(
   fun exitManualReorderMode() {
     if (!isManualReorderMode) return
     persistManualItemOrder()
+    isManualReorderMode = false
+  }
+
+  LaunchedEffect(listId) {
     isManualReorderMode = false
   }
 
