@@ -119,3 +119,67 @@
 - TEST 1 (Home manual): reorder lists, force-stop/reopen, confirm order persists.
 - TEST 2 (Detail manual): reorder items, force-stop/reopen, confirm order persists.
 - TEST 3 (Mode isolation): switch `MANUAL -> AZ -> MANUAL`, confirm saved manual order returns.
+
+## Manual reorder fix - third pass
+- Date: 2026-03-06
+- Branch: `playconsolerediness`
+- Commit tested: `01c336b` (latest code commit before this report update)
+- Emulator/device: `Pixel_4` API 29 (Android 10)
+- Execution style: adb-driven emulator automation (not manual mouse/keyboard interaction in Studio UI)
+
+### Exact rebuild/install flow used before each test
+1. `./gradlew :app:assembleDebug` (from `android/`)
+2. `adb uninstall com.cyberlist.neonlist` (non-zero ignored when absent)
+3. `./gradlew :app:installDebug`
+4. `adb shell pm path com.cyberlist.neonlist`
+5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
+6. `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+
+Automation helper committed:
+- `scripts/fresh-debug-install-check.ps1`
+
+Representative device proof captured repeatedly:
+- `package:/data/app/com.cyberlist.neonlist-.../base.apk`
+- `versionCode=14 minSdk=29 targetSdk=35`
+- `versionName=1.1`
+
+### Test 1 — Home manual reorder UI exists
+- Result: PASS
+- Evidence:
+  - `DRAG_HANDLE_COUNT=3`
+  - `VISIBLE_SEED_LIST_COUNT=3`
+- Screenshot: `test1_home_handles.png`
+
+### Test 2 — Home manual reorder persistence
+- Result: Could not complete drag via adb (long-press drag gesture not triggered by `input draganddrop/swipe` in this emulator automation path).
+- Observed order snapshots:
+  - before: `Todos > Ideas > Groceries`
+  - after attempted drag: unchanged
+  - after force-stop/relaunch: unchanged
+- Important: Home now has visible drag handles and manual-mode rendering from local manual state; persistence path code is updated, but reorder persistence still requires human drag confirmation in Studio UI.
+- Screenshots: `test2_after_drag.png`, `test2_after_restart.png`
+
+### Test 3 — Item manual reorder persistence
+- Result: Could not complete drag via adb (same long-press drag limitation).
+- Detail screen manual mode verification:
+  - manual mode entered successfully (drag handle count visible in detail manual dumps)
+- Order snapshots across attempted drag/restart remained unchanged due non-triggered drag.
+- Screenshots: `test3_after_drag.png`, `test3_after_restart.png`
+
+### Test 4 — Mode isolation (Manual -> A-Z -> Manual)
+- HomeScreen: PASS
+  - Drag-handle counts: `manual1:3`, `az:0`, `manual2:3`
+- ListDetailScreen: PASS
+  - Drag-handle counts: `manual1:3`, `az:0`, `manual2:3`
+- Screenshots: `test4_home_manual_back.png`, `test4_detail_manual_back.png`
+
+### Test 5 — Regression smoke
+- Build/install/launch remained PASS across all fresh installs.
+- Full gesture-heavy regression set (swipe/drag dependent actions) is blocked by the same adb gesture limitation in this environment.
+- No app crash signatures observed during the above runs.
+
+### Artifact folder (not committed)
+- `C:\Users\Amilapcs\source\repos\cyberlist-test-artifacts\2026-03-06-third-pass`
+
+### Remaining issue
+- Human Studio drag verification is still required for end-to-end persistence confirmation of reordered list/item positions because adb gesture injection does not reliably trigger Compose long-press drag handles in this setup.
