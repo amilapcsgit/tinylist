@@ -48,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.animation.AnimatedVisibility
@@ -126,11 +127,20 @@ fun HomeScreen(
   var newColor by remember { mutableStateOf("green") }
   var sortMenuOpen by remember { mutableStateOf(false) }
   var editTarget by remember { mutableStateOf<ListEntity?>(null) }
+  var isManualReorderMode by rememberSaveable { mutableStateOf(false) }
 
   val manualLists = remember { mutableStateListOf<ListEntity>() }
   val lazyListState = rememberLazyListState()
   val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
+  }
+
+  fun persistManualListOrder() {
+    if (sortMode != SortMode.MANUAL || manualLists.isEmpty()) return
+    val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+    if (!needsPersist) return
+    val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
+    viewModel.reorderLists(updated)
   }
 
   LaunchedEffect(lists, sortMode) {
@@ -165,6 +175,9 @@ fun HomeScreen(
     }
   }
   LaunchedEffect(sortMode) {
+    if (sortMode != SortMode.MANUAL && isManualReorderMode) {
+      isManualReorderMode = false
+    }
     snapshotFlow { manualLists.map { it.id } }
       .distinctUntilChanged()
       .debounce(250)
@@ -205,6 +218,7 @@ fun HomeScreen(
           text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.AZ)
           }
         )
@@ -212,6 +226,7 @@ fun HomeScreen(
           text = { Text(strings.sortByCompletion, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.COMPLETION)
           }
         )
@@ -219,7 +234,15 @@ fun HomeScreen(
           text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
-            viewModel.setSortMode(SortMode.MANUAL)
+            if (sortMode != SortMode.MANUAL) {
+              viewModel.setSortMode(SortMode.MANUAL)
+            }
+            if (isManualReorderMode) {
+              persistManualListOrder()
+              isManualReorderMode = false
+            } else {
+              isManualReorderMode = true
+            }
           }
         )
       }
@@ -239,7 +262,7 @@ fun HomeScreen(
           .fillMaxSize()
           .padding(bottom = 96.dp)
       ) {
-  if (sortMode == SortMode.MANUAL) {
+  if (sortMode == SortMode.MANUAL && isManualReorderMode) {
     ReorderableLists(
       lists = manualLists,
       items = items,
@@ -257,8 +280,13 @@ fun HomeScreen(
       animatedVisibilityScope = animatedVisibilityScope
     )
         } else {
+          val displayLists = if (sortMode == SortMode.MANUAL && manualLists.isNotEmpty()) {
+            manualLists
+          } else {
+            lists
+          }
           LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
+            itemsIndexed(displayLists, key = { _, list -> list.id }) { index, list ->
               val listItems = items.filter { it.listId == list.id }
               ListCard(
                 list = list,
