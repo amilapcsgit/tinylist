@@ -52,6 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -148,6 +149,7 @@ fun ListDetailScreen(
   var editText by remember { mutableStateOf("") }
   var editColor by remember { mutableStateOf("green") }
   var itemSortMode by remember { mutableStateOf(ItemSortMode.CREATED) }
+  var isManualReorderMode by rememberSaveable { mutableStateOf(false) }
 
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItemsRaw, selectedIds)
@@ -159,6 +161,20 @@ fun ListDetailScreen(
     rememberReorderableLazyListState(manualListState) { from, to ->
       manualItems.add(to.index, manualItems.removeAt(from.index))
     }
+
+  fun persistManualItemOrder() {
+    if (itemSortMode != ItemSortMode.MANUAL || manualItems.isEmpty()) return
+    val needsPersist = manualItems.withIndex().any { (index, item) -> item.order != index.toLong() }
+    if (!needsPersist) return
+    val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
+    viewModel.reorderItems(updated)
+  }
+
+  fun exitManualReorderMode() {
+    if (!isManualReorderMode) return
+    persistManualItemOrder()
+    isManualReorderMode = false
+  }
 
   LaunchedEffect(listId, listItemsRaw, itemSortMode) {
     if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
@@ -192,17 +208,14 @@ fun ListDetailScreen(
     }
   }
 
-  LaunchedEffect(itemSortMode, listId) {
-    if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
+  LaunchedEffect(itemSortMode, listId, isManualReorderMode) {
+    if (itemSortMode != ItemSortMode.MANUAL || !isManualReorderMode) return@LaunchedEffect
     snapshotFlow { manualItems.map { it.id } }
       .distinctUntilChanged()
       .debounce(250)
       .collect {
-      val needsPersist = manualItems.withIndex().any { (index, item) -> item.order != index.toLong() }
-      if (!needsPersist) return@collect
-      val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
-      viewModel.reorderItems(updated)
-    }
+        persistManualItemOrder()
+      }
   }
 
   val listItems = when (itemSortMode) {
@@ -222,7 +235,10 @@ fun ListDetailScreen(
   NeonScaffold(
     title = list.title,
     showBack = true,
-    onBack = onBack,
+    onBack = {
+      exitManualReorderMode()
+      onBack()
+    },
     headerModifier = headerContainerModifier,
     actions = {
       if (history.isNotEmpty()) {
@@ -242,14 +258,23 @@ fun ListDetailScreen(
       ) {
         DropdownMenuItem(text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
+          exitManualReorderMode()
           itemSortMode = ItemSortMode.AZ
         })
         DropdownMenuItem(text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
-          itemSortMode = ItemSortMode.MANUAL
+          if (itemSortMode != ItemSortMode.MANUAL) {
+            itemSortMode = ItemSortMode.MANUAL
+          }
+          if (isManualReorderMode) {
+            exitManualReorderMode()
+          } else {
+            isManualReorderMode = true
+          }
         })
         DropdownMenuItem(text = { Text(strings.sortDefault, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
+          exitManualReorderMode()
           itemSortMode = ItemSortMode.CREATED
         })
         DropdownMenuItem(text = { Text(strings.clearSelection, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
@@ -293,7 +318,7 @@ fun ListDetailScreen(
               Text(strings.emptyList, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
             }
           } else {
-            if (itemSortMode == ItemSortMode.MANUAL) {
+            if (itemSortMode == ItemSortMode.MANUAL && isManualReorderMode) {
               LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 state = manualListState
