@@ -73,3 +73,49 @@
 - Manual drag reorder verification still needs a true human drag test in Studio (adb cannot reliably emulate long-press drag handles for this Compose/reorderable setup).
 - Rename-list automation was inconsistent via adb text injection; perform one manual rename confirmation.
 - API 35/36 verification pending availability of a corresponding local AVD/system image.
+
+## Manual reorder persistence fix - second pass
+- Date: 2026-03-06
+- Branch: `playconsolerediness`
+- Commit range: `11f39ed` (home sync) and `2db28e4` (detail sync)
+- API used: `29` (`Pixel_4`, Android 10)
+
+### Root cause found
+- `HomeScreen` manual state was recreated from upstream by `remember(lists)` and then re-seeded on every Room emission while in manual mode.
+- `ListDetailScreen` manual state was also re-seeded on each upstream item emission.
+- Result: drag-local order could be overwritten before debounce persistence stabilized.
+
+### Files changed
+- `android/app/src/main/java/com/cyberlist/neonlist/ui/screens/HomeScreen.kt`
+- `android/app/src/main/java/com/cyberlist/neonlist/ui/screens/ListDetailScreen.kt`
+
+### Fix applied
+- Keep `manualLists`/`manualItems` as stable local state.
+- Add guarded sync from upstream:
+  - re-seed only when local manual state is empty, or ID set changed.
+  - otherwise merge upstream entity updates by ID while preserving local manual order.
+- Keep debounce + distinct ID flow persistence; write sequential `order` values only when order is actually out of sync.
+
+### Exact test commands run
+- `./gradlew :app:assembleDebug` (PASS)
+- `./gradlew :app:assembleDebug :app:installDebug` (PASS)
+- `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1` via SDK adb (PASS)
+- `adb shell pidof com.cyberlist.neonlist` (PASS, app process running)
+- `adb logcat -d | rg "FATAL EXCEPTION|AndroidRuntime: FATAL|Process: com\\.cyberlist\\.neonlist"` (no app crash traces)
+- Attempted strict drag automation for manual reorder:
+  - `adb shell input draganddrop 500 780 500 330 1200`
+  - `adb shell input draganddrop 500 780 500 330 3000`
+  - plus `uiautomator dump` before/after to compare visible order
+
+### Results
+- HomeScreen manual reorder persistence: `INCONCLUSIVE BY ADB AUTOMATION`
+  - Raw adb drag did not trigger Compose long-press reorder in this setup, so scripted before/after order stayed unchanged.
+  - Code path now preserves local manual order against upstream emissions and persists debounced order updates.
+- ListDetailScreen manual reorder persistence: `INCONCLUSIVE BY ADB AUTOMATION`
+  - Same long-press drag limitation with adb event injection.
+  - Guarded local/upstream sync fix is applied analogously to items.
+
+### Follow-up human verification required in Android Studio
+- TEST 1 (Home manual): reorder lists, force-stop/reopen, confirm order persists.
+- TEST 2 (Detail manual): reorder items, force-stop/reopen, confirm order persists.
+- TEST 3 (Mode isolation): switch `MANUAL -> AZ -> MANUAL`, confirm saved manual order returns.
