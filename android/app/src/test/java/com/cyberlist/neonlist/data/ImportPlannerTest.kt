@@ -29,4 +29,30 @@ class ImportPlannerTest {
     assertEquals(2, result.listsCreated)
     assertEquals(1, result.listsMerged)
   }
+
+  @Test
+  fun normalizeSequentialOrder_reindexesMixedOrders() {
+    val items = listOf(
+      ItemEntity(id = "i1", listId = "l1", text = "a", isDone = false, color = "red", createdAt = 1L, order = 0L),
+      ItemEntity(id = "i2", listId = "l1", text = "b", isDone = false, color = "red", createdAt = 2L, order = 189L),
+      ItemEntity(id = "i3", listId = "l1", text = "c", isDone = true, color = "blue", createdAt = 3L, order = 99999L)
+    )
+
+    val normalized = ImportPlanner.normalizeSequentialOrder(items)
+
+    assertEquals(listOf(0L, 1L, 2L), normalized.map { it.order })
+  }
+
+  @Test
+  fun sortedImportedItems_supportsTimestampStyleOrderValues() {
+    val imported = listOf(
+      ImportItem(id = "i1", listId = "l1", text = "first", isDone = false, color = "red", createdAt = 2L, order = 1700000000000L),
+      ImportItem(id = "i2", listId = "l1", text = "second", isDone = false, color = "red", createdAt = 3L, order = 1L),
+      ImportItem(id = "i3", listId = "l1", text = "third", isDone = true, color = "green", createdAt = 1L, order = 1L)
+    )
+
+    val sorted = ImportPlanner.sortedImportedItems(imported)
+
+    assertEquals(listOf("i3", "i2", "i1"), sorted.map { it.id })
+  }
 }
