@@ -3,6 +3,7 @@ package com.cyberlist.neonlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberlist.neonlist.data.ItemEntity
+import com.cyberlist.neonlist.data.ImportSummary
 import com.cyberlist.neonlist.data.ListEntity
 import com.cyberlist.neonlist.data.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -205,6 +206,10 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
 
   suspend fun exportJson(): String {
     return repository.exportJson(lists.value, items.value)
+  }
+
+  suspend fun importJson(content: String): ImportSummary {
+    return repository.importJson(content)
   }
 
   private fun pushHistory(entry: HistoryEntry) {

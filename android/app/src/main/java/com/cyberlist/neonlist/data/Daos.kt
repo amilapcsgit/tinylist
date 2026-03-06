@@ -13,6 +13,9 @@ interface ListDao {
   @Query("SELECT * FROM lists ORDER BY sort_order ASC")
   fun observeLists(): Flow<List<ListEntity>>
 
+  @Query("SELECT * FROM lists ORDER BY sort_order ASC")
+  suspend fun getAll(): List<ListEntity>
+
   @Insert(onConflict = OnConflictStrategy.ABORT)
   suspend fun insert(list: ListEntity)
 
@@ -37,6 +40,9 @@ interface ListDao {
   @Query("SELECT * FROM lists WHERE id = :listId LIMIT 1")
   suspend fun getById(listId: String): ListEntity?
 
+  @Query("SELECT * FROM lists WHERE title = :title LIMIT 1")
+  suspend fun getByTitle(title: String): ListEntity?
+
   @Query("SELECT COUNT(*) FROM lists")
   suspend fun count(): Int
 }
@@ -48,6 +54,9 @@ interface ItemDao {
 
   @Query("SELECT * FROM items WHERE listId = :listId ORDER BY sort_order ASC, createdAt ASC")
   fun observeItemsByList(listId: String): Flow<List<ItemEntity>>
+
+  @Query("SELECT * FROM items WHERE listId = :listId ORDER BY sort_order ASC, createdAt ASC")
+  suspend fun getByListId(listId: String): List<ItemEntity>
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun upsert(item: ItemEntity)

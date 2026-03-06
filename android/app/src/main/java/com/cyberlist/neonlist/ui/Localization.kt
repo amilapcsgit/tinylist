@@ -51,6 +51,10 @@ interface Strings {
   val data: String
   val exportBackup: String
   val exportBackupNote: String
+  val importJson: String
+  val importJsonNote: String
+  val importFailed: String
+  val importSummary: (Int, Int, Int) -> String
   val lists: String
   val items: String
   val neonList: String
@@ -114,6 +118,12 @@ object EnStrings : Strings {
   override val data = "DATA"
   override val exportBackup = "Export Backup"
   override val exportBackupNote = "Save your lists as JSON file"
+  override val importJson = "Import JSON"
+  override val importJsonNote = "Restore or merge lists from backup JSON"
+  override val importFailed = "Import failed. Please choose a valid backup JSON file."
+  override val importSummary = { created: Int, merged: Int, items: Int ->
+    "Import complete: $created lists created, $merged lists merged, $items items imported."
+  }
   override val lists = "LISTS"
   override val items = "ITEMS"
   override val neonList = "NEON LIST"
@@ -176,6 +186,12 @@ object ItStrings : Strings {
   override val data = "DATI"
   override val exportBackup = "Esporta Backup"
   override val exportBackupNote = "Salva le tue liste come file JSON"
+  override val importJson = "Importa JSON"
+  override val importJsonNote = "Ripristina o unisci liste da un backup JSON"
+  override val importFailed = "Importazione non riuscita. Seleziona un file JSON di backup valido."
+  override val importSummary = { created: Int, merged: Int, items: Int ->
+    "Import completato: $created liste create, $merged liste unite, $items elementi importati."
+  }
   override val lists = "LISTE"
   override val items = "ELEMENTI"
   override val neonList = "LISTA NEON"
@@ -238,6 +254,12 @@ object SiStrings : Strings {
   override val data = "දත්ත"
   override val exportBackup = "දත්ත පිටපතක් ලබාගන්න"
   override val exportBackupNote = "ඔබේ ලැයිස්තු JSON ගොනුවක් ලෙස සුරකින්න"
+  override val importJson = "Import JSON"
+  override val importJsonNote = "Restore or merge from backup JSON"
+  override val importFailed = "Import failed. Please choose a valid backup JSON file."
+  override val importSummary = { created: Int, merged: Int, items: Int ->
+    "Import complete: $created lists created, $merged lists merged, $items items imported."
+  }
   override val lists = "ලැයිස්තු"
   override val items = "අයිතම"
   override val neonList = "නියොන් ලැයිස්තුව"
