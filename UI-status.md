@@ -183,3 +183,72 @@ Representative device proof captured repeatedly:
 
 ### Remaining issue
 - Human Studio drag verification is still required for end-to-end persistence confirmation of reordered list/item positions because adb gesture injection does not reliably trigger Compose long-press drag handles in this setup.
+
+## Reorder mode and persistence - fourth pass
+- Date: 2026-03-06
+- Branch: `playconsolerediness`
+- Commit tested: `c8b0413`
+- Emulator: `Pixel_4` API 29 (Android 10)
+- Execution style: Android Studio emulator + adb automation with real `draganddrop` gestures
+
+### Exact rebuild/install flow used before each test block
+1. From `android/`: `.\gradlew.bat :app:assembleDebug`
+2. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+3. From `android/`: `.\gradlew.bat :app:installDebug`
+4. `adb shell pm path com.cyberlist.neonlist`
+5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
+6. Launch app (`adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`) or (`adb shell am start -n com.cyberlist.neonlist/.MainActivity`)
+
+### Installed package proof
+- `versionCode=14 minSdk=29 targetSdk=35`
+- `versionName=1.1`
+- `pm path` output confirmed `base.apk` install on emulator for each test block (`testA`..`testF` logs).
+
+### Test A - HomeScreen reorder mode visibility
+- Result: PASS
+- Evidence: `TEST_A_HOME_HANDLES default:0 on:3 off:0`
+- Interpretation: handles hidden by default, visible only while manual reorder mode is ON, hidden again on OFF.
+
+### Test B - HomeScreen persistence
+- Result: PASS
+- Evidence: `TEST_B_HOME_PERSIST before:Todos > Groceries > Ideas afterDrag:Groceries > Todos > Ideas afterExit:Groceries > Todos > Ideas afterRestart:Groceries > Todos > Ideas dragHandlesAfterRestart:0`
+- Interpretation: manual list order persisted after explicit mode exit and force-stop restart; handles stayed hidden after restart.
+
+### Test C - ListDetailScreen reorder mode visibility
+- Result: PASS
+- Evidence: `TEST_C_DETAIL_HANDLES default:0 on:3 off:0`
+- Interpretation: detail handles hidden by default, visible only in active manual reorder mode, hidden again after toggle-off.
+
+### Test D - ListDetailScreen persistence
+- Result: PASS
+- Evidence: `TEST_D_DETAIL_PERSIST before:Welcome to NeonList > Swipe right to edit > Swipe left to delete afterDrag:Swipe right to edit > Welcome to NeonList > Swipe left to delete afterExit:Swipe right to edit > Welcome to NeonList > Swipe left to delete afterReopen:Swipe right to edit > Welcome to NeonList > Swipe left to delete afterRestart:Swipe right to edit > Welcome to NeonList > Swipe left to delete dragHandlesAfterExit:0 dragHandlesAfterRestart:0`
+- Interpretation: detail item manual order persisted after mode toggle-off, navigation away/back, and app restart.
+
+### Test E - Mode isolation (`MANUAL -> A-Z -> MANUAL`)
+- Home result: PASS
+- Home evidence: `homeSaved:Groceries > Todos > Ideas homeAz:Groceries > Ideas > Todos homeManualOn:Groceries > Todos > Ideas homeManualOff:Groceries > Todos > Ideas homeHandles(saved/az/on/off)=0/0/3/0`
+- Detail result: PASS
+- Detail evidence: `TEST_E_DETAIL_ISOLATION saved:Swipe right to edit > Welcome to NeonList > Swipe left to delete az:Swipe left to delete > Swipe right to edit > Welcome to NeonList manualOn:Swipe right to edit > Welcome to NeonList > Swipe left to delete manualOff:Swipe right to edit > Welcome to NeonList > Swipe left to delete handles(saved/az/on/off)=0/0/3/0`
+- Interpretation: A-Z disables reorder edit mode; switching back to MANUAL restores saved manual order; handles only visible while edit mode is explicitly ON.
+
+### Test F - Regression smoke
+- Result: PARTIAL
+- Automated evidence: `TEST_F_SMOKE deleteItem(before/afterDelete/afterUndo)=True/False/False undoItemTapped=False clearCompletedRemovedDone=False deleteList(todos before/afterDelete/afterUndo)=True/False/False undoListTapped=True exportPickerOpened=True`
+- Confirmed in this pass: export picker opens (`exportPickerOpened=True`).
+- Remaining smoke checks still need direct manual emulator interaction for reliable confirmation of all gesture+dialog paths (create/rename/duplicate/delete+undo/clear completed), because scripted swipes and dialog timing can mismatch app gesture affordances.
+
+### Screenshot files captured
+- `testA_home_default.png`
+- `testA_home_manual_on.png`
+- `testA_home_manual_off.png`
+- `testB_after_drag.png`
+- `testB_after_restart.png`
+- `testC_detail_default.png`
+- `testC_detail_manual_on.png`
+- `testC_detail_manual_off.png`
+- `testD_after_drag.png`
+- `testD_after_restart.png`
+- `testE_final.png`
+
+### Artifacts
+- Full logs, dumps, and screenshots: `C:\Users\Amilapcs\source\repos\cyberlist-test-artifacts\2026-03-06-fourth-pass-final`
