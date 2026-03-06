@@ -126,16 +126,33 @@ fun HomeScreen(
   var sortMenuOpen by remember { mutableStateOf(false) }
   var editTarget by remember { mutableStateOf<ListEntity?>(null) }
 
-  val manualLists = remember(lists) { mutableStateListOf<ListEntity>().apply { addAll(lists) } }
+  val manualLists = remember { mutableStateListOf<ListEntity>() }
   val lazyListState = rememberLazyListState()
   val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
   }
 
   LaunchedEffect(lists, sortMode) {
-    if (sortMode == SortMode.MANUAL) {
+    if (sortMode != SortMode.MANUAL) return@LaunchedEffect
+
+    val upstreamSorted = lists.sortedBy { it.order }
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val upstreamIds = upstreamSorted.map { it.id }.toSet()
+    val localIds = manualLists.map { it.id }.toSet()
+
+    if (manualLists.isEmpty() || upstreamIds != localIds) {
       manualLists.clear()
-      manualLists.addAll(lists)
+      manualLists.addAll(upstreamSorted)
+      return@LaunchedEffect
+    }
+
+    val merged = manualLists.mapNotNull { local ->
+      upstreamById[local.id]?.copy(order = local.order)
+    }
+
+    if (merged.size != manualLists.size || manualLists.zip(merged).any { it.first != it.second }) {
+      manualLists.clear()
+      manualLists.addAll(merged)
     }
   }
   LaunchedEffect(sortMode) {
