@@ -252,3 +252,50 @@ Representative device proof captured repeatedly:
 
 ### Artifacts
 - Full logs, dumps, and screenshots: `C:\Users\Amilapcs\source\repos\cyberlist-test-artifacts\2026-03-06-fourth-pass-final`
+
+## JSON import restore - first pass
+- Date: 2026-03-06
+- Branch: `playconsolelistimport`
+- Commit hash tested: `f1d20c9`
+- Device: `emulator-5554` (`Pixel_4`, API 29)
+
+### Rebuild/install commands used
+1. `cd android`
+2. `./gradlew :app:assembleDebug`
+3. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+4. `./gradlew :app:installDebug`
+5. `D:\Projects\Android\platform-tools\adb.exe shell pm path com.cyberlist.neonlist`
+6. `D:\Projects\Android\platform-tools\adb.exe shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
+7. `D:\Projects\Android\platform-tools\adb.exe shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+
+### Installed package proof
+- `package:/data/app/com.cyberlist.neonlist-EUEYRe0TaAyxC0lMAMVSbA==/base.apk`
+- `versionCode=15 minSdk=29 targetSdk=35`
+- `versionName=1.2`
+
+### Import files used
+- Main backup file: `D:\Projects\Neonlist\neonlist-backup-2026-03-06.json`
+- Pushed to emulator: `/sdcard/Download/neonlist-backup-2026-03-06.json`
+- Invalid JSON check file: `/sdcard/Download/bad-import.json`
+
+### Test results
+- [PASS] Test 1 - Import from backup via SAF picker
+  - Result dialog: `Import complete: 5 lists created, 0 lists merged, 26 items imported.`
+- [PASS] Test 2 - Re-import same backup to verify exact-title merge behavior
+  - Result dialog: `Import complete: 0 lists created, 5 lists merged, 26 items imported.`
+- [PASS] Test 3 - Invalid JSON handling
+  - Result dialog: `Import failed. Please choose a valid backup JSON file.`
+- [PASS] Test 4 - Export still opens after import
+  - DocumentsUI save screen opened with backup filename field and `SAVE` action.
+- [PASS] Unit tests (`./gradlew :app:testDebugUnitTest`)
+  - `resolveListTargets_mergesOnlyExactTitleMatches`
+  - `normalizeSequentialOrder_reindexesMixedOrders`
+  - `sortedImportedItems_supportsTimestampStyleOrderValues`
+
+### Counters observed during import
+- Lists created: `5` (first import), `0` (second import)
+- Lists merged: `0` (first import), `5` (second import)
+- Items imported: `26` (first import), `26` (second import)
+
+### Remaining issue
+- Manual drag reorder after import was not re-verified in this pass because adb gesture injection remains unreliable for Compose long-press drag interactions; previous branch work already covered reorder behavior separately.
