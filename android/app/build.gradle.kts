@@ -14,8 +14,8 @@ android {
     applicationId = "com.cyberlist.neonlist"
     minSdk = 29
     targetSdk = 35
-    versionCode = 15
-    versionName = "1.2"
+    versionCode = 16
+    versionName = "1.21"
   }
 
   val keystorePath = (project.findProperty("KEYSTORE_PATH") as String?) ?: System.getenv("KEYSTORE_PATH")
