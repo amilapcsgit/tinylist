@@ -20,7 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,7 +50,9 @@ import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.DisplayFont
 import com.cyberlist.neonlist.ui.LocalStrings
 import com.cyberlist.neonlist.ui.components.NeonScaffold
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -67,6 +71,7 @@ fun SettingsScreen(
   val strings = LocalStrings.current
   val uriHandler = LocalUriHandler.current
   var readmeText by remember { mutableStateOf<String?>(null) }
+  var importFeedback by remember { mutableStateOf<String?>(null) }
   val isDarkTheme = themeMode != "light"
 
   LaunchedEffect(Unit) {
@@ -83,6 +88,38 @@ fun SettingsScreen(
       val json = viewModel.exportJson()
       writeToUri(context, uri, json)
     }
+  }
+
+  val importLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.OpenDocument()
+  ) { uri: Uri? ->
+    if (uri == null) return@rememberLauncherForActivityResult
+    scope.launch {
+      runCatching {
+        val json = readFromUri(context, uri)
+        viewModel.importJson(json)
+      }.onSuccess { summary ->
+        importFeedback = strings.importSummary(
+          summary.listsCreated,
+          summary.listsMerged,
+          summary.itemsImported
+        )
+      }.onFailure {
+        importFeedback = strings.importFailed
+      }
+    }
+  }
+
+  if (importFeedback != null) {
+    AlertDialog(
+      onDismissRequest = { importFeedback = null },
+      confirmButton = {
+        androidx.compose.material3.TextButton(onClick = { importFeedback = null }) {
+          Text("OK")
+        }
+      },
+      text = { Text(importFeedback.orEmpty()) }
+    )
   }
 
   NeonScaffold(
@@ -224,6 +261,32 @@ fun SettingsScreen(
           Text(strings.exportBackup, color = NeonPrimary)
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(6.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Column {
+            Text(strings.importJson, style = MaterialTheme.typography.bodyLarge)
+            Text(strings.importJsonNote, color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
+          }
+          Icon(Icons.Filled.Upload, contentDescription = null, tint = NeonMutedForeground)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        androidx.compose.material3.TextButton(onClick = {
+          importLauncher.launch(arrayOf("application/json", "*/*"))
+        }) {
+          Text(strings.importJson, color = NeonPrimary)
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -298,8 +361,17 @@ private fun StatBox(label: String, value: String) {
 }
 
 private suspend fun writeToUri(context: Context, uri: Uri, content: String) {
-  context.contentResolver.openOutputStream(uri)?.use { stream ->
-    stream.write(content.toByteArray())
+  withContext(Dispatchers.IO) {
+    context.contentResolver.openOutputStream(uri)?.use { stream ->
+      stream.write(content.toByteArray())
+    }
+  }
+}
+
+private suspend fun readFromUri(context: Context, uri: Uri): String {
+  return withContext(Dispatchers.IO) {
+    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+      ?: throw IllegalArgumentException("Unable to read selected file.")
   }
 }
 

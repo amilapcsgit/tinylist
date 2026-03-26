@@ -14,14 +14,20 @@ android {
     applicationId = "com.cyberlist.neonlist"
     minSdk = 29
     targetSdk = 35
-    versionCode = 13
-    versionName = "1.1"
+    versionCode = 16
+    versionName = "1.21"
   }
 
   val keystorePath = (project.findProperty("KEYSTORE_PATH") as String?) ?: System.getenv("KEYSTORE_PATH")
   val keystorePassword = (project.findProperty("KEYSTORE_PASSWORD") as String?) ?: System.getenv("KEYSTORE_PASSWORD")
   val keyAlias = (project.findProperty("KEY_ALIAS") as String?) ?: System.getenv("KEY_ALIAS")
   val keyPassword = (project.findProperty("KEY_PASSWORD") as String?) ?: System.getenv("KEY_PASSWORD")
+  val isReleaseSigningConfigured =
+    !keystorePath.isNullOrBlank() &&
+      !keystorePassword.isNullOrBlank() &&
+      !keyAlias.isNullOrBlank() &&
+      !keyPassword.isNullOrBlank()
+  val isReleaseTaskRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
 
   signingConfigs {
     getByName("debug")
@@ -37,13 +43,14 @@ android {
 
   buildTypes {
     release {
+      if (isReleaseTaskRequested && !isReleaseSigningConfigured) {
+        throw GradleException(
+          "Release build requires KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD. Refusing to sign with debug."
+        )
+      }
       isMinifyEnabled = false
       isShrinkResources = false
-      signingConfig = if (keystorePath.isNullOrBlank()) {
-        signingConfigs.getByName("debug")
-      } else {
-        signingConfigs.getByName("release")
-      }
+      signingConfig = signingConfigs.getByName("release")
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
         "proguard-rules.pro"
@@ -86,8 +93,8 @@ dependencies {
   implementation("androidx.compose.ui:ui")
   implementation("androidx.compose.ui:ui-tooling-preview")
   implementation("androidx.compose.foundation:foundation")
-  implementation("androidx.compose.material3:material3:1.2.1")
-  implementation("androidx.compose.material:material-icons-extended:1.6.8")
+  implementation("androidx.compose.material3:material3")
+  implementation("androidx.compose.material:material-icons-extended")
   implementation("com.google.android.material:material:1.12.0")
   implementation("androidx.navigation:navigation-compose:2.7.7")
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -98,7 +105,6 @@ dependencies {
   kapt("androidx.room:room-compiler:2.8.4")
   implementation("androidx.room:room-ktx:2.8.4")
 
-  implementation("androidx.datastore:datastore-preferences:1.1.1")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
   implementation("com.jakewharton.timber:timber:5.0.1")
@@ -107,4 +113,6 @@ dependencies {
 
   debugImplementation("androidx.compose.ui:ui-tooling")
   debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+  testImplementation("junit:junit:4.13.2")
 }

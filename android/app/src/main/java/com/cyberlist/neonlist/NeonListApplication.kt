@@ -19,7 +19,7 @@ class NeonListApplication : Application() {
       Timber.plant(Timber.DebugTree())
     }
     val db = NeonDatabase.getInstance(this)
-    repository = Repository(this, db.listDao(), db.itemDao())
+    repository = Repository(this, db.listDao(), db.itemDao(), db)
 
     CoroutineScope(Dispatchers.IO).launch {
       repository.seedIfEmpty()

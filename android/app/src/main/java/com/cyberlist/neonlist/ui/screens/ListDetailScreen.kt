@@ -115,7 +115,8 @@ import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.Locale
 import kotlin.math.abs
 
@@ -146,7 +147,8 @@ fun ListDetailScreen(
   var editTarget by remember { mutableStateOf<ItemEntity?>(null) }
   var editText by remember { mutableStateOf("") }
   var editColor by remember { mutableStateOf("green") }
-  var itemSortMode by remember { mutableStateOf(ItemSortMode.CREATED) }
+  var itemSortMode by remember { mutableStateOf(ItemSortMode.MANUAL) }
+  var isManualReorderMode by remember { mutableStateOf(false) }
 
   val selectionMode = selectedIds.isNotEmpty()
   val sumData = computeSum(listItemsRaw, selectedIds)
@@ -159,19 +161,64 @@ fun ListDetailScreen(
       manualItems.add(to.index, manualItems.removeAt(from.index))
     }
 
-  LaunchedEffect(listItemsRaw, itemSortMode) {
-    if (itemSortMode == ItemSortMode.MANUAL) {
+  fun persistManualItemOrder() {
+    if (itemSortMode != ItemSortMode.MANUAL || manualItems.isEmpty()) return
+    val needsPersist = manualItems.withIndex().any { (index, item) -> item.order != index.toLong() }
+    if (!needsPersist) return
+    val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
+    viewModel.reorderItems(updated)
+  }
+
+  fun exitManualReorderMode() {
+    if (!isManualReorderMode) return
+    persistManualItemOrder()
+    isManualReorderMode = false
+  }
+
+  LaunchedEffect(listId) {
+    isManualReorderMode = false
+  }
+
+  LaunchedEffect(listId, listItemsRaw, itemSortMode) {
+    if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
+
+    val upstreamSorted = listItemsRaw.sortedBy { it.order }
+    val upstreamIds = upstreamSorted.map { it.id }
+    val localIds = manualItems.map { it.id }
+
+    if (manualItems.isEmpty() || upstreamIds.toSet() != localIds.toSet()) {
       manualItems.clear()
-      manualItems.addAll(listItemsRaw.sortedBy { it.order })
+      manualItems.addAll(upstreamSorted)
+      return@LaunchedEffect
+    }
+
+    if (upstreamIds == localIds) {
+      if (manualItems.zip(upstreamSorted).any { it.first != it.second }) {
+        manualItems.clear()
+        manualItems.addAll(upstreamSorted)
+      }
+      return@LaunchedEffect
+    }
+
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val merged = localIds.mapNotNull { id ->
+      upstreamById[id]
+    }
+
+    if (merged.size == manualItems.size && manualItems.zip(merged).any { it.first != it.second }) {
+      manualItems.clear()
+      manualItems.addAll(merged)
     }
   }
 
-  LaunchedEffect(itemSortMode) {
-    if (itemSortMode != ItemSortMode.MANUAL) return@LaunchedEffect
-    snapshotFlow { manualItems.map { it.id } }.collect {
-      val updated = manualItems.mapIndexed { index, item -> item.copy(order = index.toLong()) }
-      viewModel.reorderItems(updated)
-    }
+  LaunchedEffect(itemSortMode, listId, isManualReorderMode) {
+    if (itemSortMode != ItemSortMode.MANUAL || !isManualReorderMode) return@LaunchedEffect
+    snapshotFlow { manualItems.map { it.id } }
+      .distinctUntilChanged()
+      .debounce(250)
+      .collect {
+        persistManualItemOrder()
+      }
   }
 
   val listItems = when (itemSortMode) {
@@ -191,7 +238,10 @@ fun ListDetailScreen(
   NeonScaffold(
     title = list.title,
     showBack = true,
-    onBack = onBack,
+    onBack = {
+      exitManualReorderMode()
+      onBack()
+    },
     headerModifier = headerContainerModifier,
     actions = {
       if (history.isNotEmpty()) {
@@ -211,14 +261,23 @@ fun ListDetailScreen(
       ) {
         DropdownMenuItem(text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
+          exitManualReorderMode()
           itemSortMode = ItemSortMode.AZ
         })
         DropdownMenuItem(text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
-          itemSortMode = ItemSortMode.MANUAL
+          if (itemSortMode != ItemSortMode.MANUAL) {
+            itemSortMode = ItemSortMode.MANUAL
+          }
+          if (isManualReorderMode) {
+            exitManualReorderMode()
+          } else {
+            isManualReorderMode = true
+          }
         })
         DropdownMenuItem(text = { Text(strings.sortDefault, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
           menuOpen = false
+          exitManualReorderMode()
           itemSortMode = ItemSortMode.CREATED
         })
         DropdownMenuItem(text = { Text(strings.clearSelection, color = MaterialTheme.colorScheme.onSurface) }, onClick = {
@@ -262,7 +321,7 @@ fun ListDetailScreen(
               Text(strings.emptyList, color = NeonMutedForeground, style = MaterialTheme.typography.titleMedium)
             }
           } else {
-            if (itemSortMode == ItemSortMode.MANUAL) {
+            if (itemSortMode == ItemSortMode.MANUAL && isManualReorderMode) {
               LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 state = manualListState

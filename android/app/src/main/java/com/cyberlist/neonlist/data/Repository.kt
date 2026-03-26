@@ -5,20 +5,26 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 import android.content.Context
+import androidx.room.withTransaction
 import timber.log.Timber
 
 class Repository(
   private val context: Context,
   private val listDao: ListDao,
-  private val itemDao: ItemDao
+  private val itemDao: ItemDao,
+  private val database: NeonDatabase
 ) {
   private val prefs = context.getSharedPreferences("neonlist_prefs", Context.MODE_PRIVATE)
-  private val json = Json { prettyPrint = true }
+  private val json = Json {
+    prettyPrint = true
+    ignoreUnknownKeys = true
+  }
   val lists: Flow<List<ListEntity>> = listDao.observeLists()
     .catch { e ->
       Timber.e(e, "Error observing lists")
@@ -88,9 +94,12 @@ class Repository(
 
   suspend fun updateList(list: ListEntity) = listDao.update(list)
 
+  suspend fun upsertList(list: ListEntity) = listDao.upsert(list)
+
   suspend fun deleteList(listId: String) {
-    listDao.deleteById(listId)
-    itemDao.deleteByListId(listId)
+    database.withTransaction {
+      listDao.deleteById(listId)
+    }
   }
 
   suspend fun addItem(listId: String, text: String, color: String) {
@@ -136,6 +145,69 @@ class Repository(
       exportedAt = System.currentTimeMillis()
     )
     json.encodeToString(payload)
+  }
+
+  suspend fun importJson(content: String): ImportSummary = withContext(Dispatchers.IO) {
+    val payload = try {
+      json.decodeFromString<ImportPayload>(content)
+    } catch (e: Exception) {
+      throw IllegalArgumentException("Invalid backup JSON format.", e)
+    }
+
+    database.withTransaction {
+      val existingLists = listDao.getAll()
+      val nextListOrderStart = (existingLists.maxOfOrNull { it.order } ?: -1) + 1
+      val resolution = ImportPlanner.resolveListTargets(
+        importedLists = payload.lists,
+        existingLists = existingLists,
+        nextListOrderStart = nextListOrderStart,
+        newId = { UUID.randomUUID().toString() }
+      )
+
+      if (resolution.listsToCreate.isNotEmpty()) {
+        listDao.insertAll(resolution.listsToCreate)
+      }
+
+      val importedItemsBySourceList = payload.items.groupBy { it.listId }
+      var importedItemsCount = 0
+
+      resolution.listTargets.forEach { target ->
+        val sourceItems = importedItemsBySourceList[target.sourceListId].orEmpty()
+        if (sourceItems.isEmpty()) return@forEach
+
+        val existingItems = itemDao.getByListId(target.targetListId)
+        val appendedItems = ImportPlanner.sortedImportedItems(sourceItems).mapIndexed { index, item ->
+          ItemEntity(
+            id = UUID.randomUUID().toString(),
+            listId = target.targetListId,
+            text = item.text,
+            isDone = item.isDone,
+            color = item.color,
+            createdAt = item.createdAt,
+            order = (existingItems.size + index).toLong()
+          )
+        }
+        if (appendedItems.isNotEmpty()) {
+          itemDao.upsertAll(appendedItems)
+          importedItemsCount += appendedItems.size
+        }
+
+        val currentItems = itemDao.getByListId(target.targetListId)
+        val normalizedItems = ImportPlanner.normalizeSequentialOrder(currentItems)
+        val changedItems = normalizedItems.filterIndexed { index, normalized ->
+          normalized.order != currentItems[index].order
+        }
+        if (changedItems.isNotEmpty()) {
+          itemDao.updateAll(changedItems)
+        }
+      }
+
+      ImportSummary(
+        listsCreated = resolution.listsCreated,
+        listsMerged = resolution.listsMerged,
+        itemsImported = importedItemsCount
+      )
+    }
   }
 }
 

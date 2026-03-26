@@ -3,6 +3,7 @@ package com.cyberlist.neonlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cyberlist.neonlist.data.ItemEntity
+import com.cyberlist.neonlist.data.ImportSummary
 import com.cyberlist.neonlist.data.ListEntity
 import com.cyberlist.neonlist.data.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,10 +41,19 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
   val sortedLists: StateFlow<List<ListEntity>> = combine(lists, items, sortMode) { listData, itemData, mode ->
     when (mode) {
       SortMode.AZ -> listData.sortedBy { it.title.lowercase() }
-      SortMode.COMPLETION -> listData.sortedByDescending { list ->
-        val listItems = itemData.filter { it.listId == list.id }
-        val total = listItems.size
-        if (total == 0) 0.0 else listItems.count { it.isDone }.toDouble() / total.toDouble()
+      SortMode.COMPLETION -> {
+        val statsByList = HashMap<String, IntArray>(listData.size)
+        itemData.forEach { item ->
+          val stats = statsByList.getOrPut(item.listId) { intArrayOf(0, 0) } // [done, total]
+          if (item.isDone) stats[0]++
+          stats[1]++
+        }
+        listData.sortedByDescending { list ->
+          val stats = statsByList[list.id]
+          val done = stats?.get(0) ?: 0
+          val total = stats?.get(1) ?: 0
+          if (total == 0) 0.0 else done.toDouble() / total.toDouble()
+        }
       }
       SortMode.MANUAL -> listData.sortedBy { it.order }
     }
@@ -180,7 +190,7 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
     viewModelScope.launch {
       when (entry) {
         is HistoryEntry.ListDelete -> {
-          repository.updateList(entry.list)
+          repository.upsertList(entry.list)
           entry.items.forEach { repository.updateItem(it) }
         }
         is HistoryEntry.ItemDelete -> repository.updateItem(entry.item)
@@ -196,6 +206,10 @@ class AppViewModel(private val repository: Repository) : ViewModel() {
 
   suspend fun exportJson(): String {
     return repository.exportJson(lists.value, items.value)
+  }
+
+  suspend fun importJson(content: String): ImportSummary {
+    return repository.importJson(content)
   }
 
   private fun pushHistory(entry: HistoryEntry) {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -102,6 +103,8 @@ import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun HomeScreen(
@@ -123,26 +126,67 @@ fun HomeScreen(
   var newColor by remember { mutableStateOf("green") }
   var sortMenuOpen by remember { mutableStateOf(false) }
   var editTarget by remember { mutableStateOf<ListEntity?>(null) }
+  var isManualReorderMode by remember { mutableStateOf(false) }
 
-  val manualLists = remember(lists) { mutableStateListOf<ListEntity>().apply { addAll(lists) } }
+  val manualLists = remember { mutableStateListOf<ListEntity>() }
   val lazyListState = rememberLazyListState()
   val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
   }
 
+  fun persistManualListOrder() {
+    if (sortMode != SortMode.MANUAL || manualLists.isEmpty()) return
+    val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+    if (!needsPersist) return
+    val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
+    viewModel.reorderLists(updated)
+  }
+
   LaunchedEffect(lists, sortMode) {
-    if (sortMode == SortMode.MANUAL) {
+    if (sortMode != SortMode.MANUAL) return@LaunchedEffect
+
+    val upstreamSorted = lists.sortedBy { it.order }
+    val upstreamIds = upstreamSorted.map { it.id }
+    val localIds = manualLists.map { it.id }
+
+    if (manualLists.isEmpty() || upstreamIds.toSet() != localIds.toSet()) {
       manualLists.clear()
-      manualLists.addAll(lists)
+      manualLists.addAll(upstreamSorted)
+      return@LaunchedEffect
+    }
+
+    if (upstreamIds == localIds) {
+      if (manualLists.zip(upstreamSorted).any { it.first != it.second }) {
+        manualLists.clear()
+        manualLists.addAll(upstreamSorted)
+      }
+      return@LaunchedEffect
+    }
+
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val merged = localIds.mapNotNull { id ->
+      upstreamById[id]
+    }
+
+    if (merged.size == manualLists.size && manualLists.zip(merged).any { it.first != it.second }) {
+      manualLists.clear()
+      manualLists.addAll(merged)
     }
   }
-  LaunchedEffect(sortMode) {
-    snapshotFlow { manualLists.toList() }.collect { ordered ->
-      if (sortMode == SortMode.MANUAL) {
-        val updated = ordered.mapIndexed { index, list -> list.copy(order = index) }
+  LaunchedEffect(sortMode, isManualReorderMode) {
+    if (sortMode != SortMode.MANUAL && isManualReorderMode) {
+      isManualReorderMode = false
+    }
+    if (sortMode != SortMode.MANUAL || !isManualReorderMode) return@LaunchedEffect
+    snapshotFlow { manualLists.map { it.id } }
+      .distinctUntilChanged()
+      .debounce(250)
+      .collect {
+        val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+        if (!needsPersist) return@collect
+        val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
         viewModel.reorderLists(updated)
       }
-    }
   }
 
   NeonScaffold(
@@ -172,6 +216,7 @@ fun HomeScreen(
           text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.AZ)
           }
         )
@@ -179,6 +224,7 @@ fun HomeScreen(
           text = { Text(strings.sortByCompletion, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.COMPLETION)
           }
         )
@@ -186,7 +232,15 @@ fun HomeScreen(
           text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
-            viewModel.setSortMode(SortMode.MANUAL)
+            if (sortMode != SortMode.MANUAL) {
+              viewModel.setSortMode(SortMode.MANUAL)
+            }
+            if (isManualReorderMode) {
+              persistManualListOrder()
+              isManualReorderMode = false
+            } else {
+              isManualReorderMode = true
+            }
           }
         )
       }
@@ -206,7 +260,7 @@ fun HomeScreen(
           .fillMaxSize()
           .padding(bottom = 96.dp)
       ) {
-  if (sortMode == SortMode.MANUAL) {
+  if (sortMode == SortMode.MANUAL && isManualReorderMode) {
     ReorderableLists(
       lists = manualLists,
       items = items,
@@ -224,8 +278,13 @@ fun HomeScreen(
       animatedVisibilityScope = animatedVisibilityScope
     )
         } else {
+          val displayLists = if (sortMode == SortMode.MANUAL && manualLists.isNotEmpty()) {
+            manualLists
+          } else {
+            lists
+          }
           LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
+            itemsIndexed(displayLists, key = { _, list -> list.id }) { index, list ->
               val listItems = items.filter { it.listId == list.id }
               ListCard(
                 list = list,
@@ -319,22 +378,21 @@ private fun ReorderableLists(
     itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
       ReorderableItem(state = state, key = list.id) { _ ->
         val listItems = items.filter { it.listId == list.id }
-        Box(modifier = Modifier.longPressDraggableHandle()) {
-          ListCard(
-            list = list,
-            itemCount = listItems.size,
-            completedCount = listItems.count { it.isDone },
-            onOpen = { onOpenList(list.id) },
-            onDelete = { onDelete(list) },
-            onEdit = { onEdit(list) },
-            onDuplicate = { onDuplicate(list) },
-            onAddNew = onAddNew,
-            dragHandle = true,
-            entranceDelayMs = index * 50,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
-          )
-        }
+        ListCard(
+          list = list,
+          itemCount = listItems.size,
+          completedCount = listItems.count { it.isDone },
+          onOpen = { onOpenList(list.id) },
+          onDelete = { onDelete(list) },
+          onEdit = { onEdit(list) },
+          onDuplicate = { onDuplicate(list) },
+          onAddNew = onAddNew,
+          dragHandle = true,
+          dragHandleModifier = Modifier.longPressDraggableHandle(),
+          entranceDelayMs = index * 50,
+          sharedTransitionScope = sharedTransitionScope,
+          animatedVisibilityScope = animatedVisibilityScope
+        )
       }
     }
   }
@@ -351,6 +409,7 @@ private fun ListCard(
   onDuplicate: () -> Unit,
   onAddNew: () -> Unit,
   dragHandle: Boolean = false,
+  dragHandleModifier: Modifier = Modifier,
   entranceDelayMs: Int = 0,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedContentScope
@@ -527,16 +586,27 @@ private fun ListCard(
               color = primaryTextColor
             )
           }
-          Box(
-            modifier = Modifier
-              .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
-              .padding(horizontal = 12.dp, vertical = 6.dp)
-          ) {
-            Text(
-              "${completedCount}/${itemCount}",
-              color = color,
-              style = MaterialTheme.typography.titleMedium
-            )
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+              Text(
+                "${completedCount}/${itemCount}",
+                color = color,
+                style = MaterialTheme.typography.titleMedium
+              )
+            }
+            if (dragHandle) {
+              Spacer(modifier = Modifier.width(8.dp))
+              Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag",
+                tint = NeonMutedForeground,
+                modifier = dragHandleModifier
+              )
+            }
           }
         }
       }
