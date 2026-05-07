@@ -7,16 +7,21 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.NightsStay
@@ -130,10 +135,12 @@ fun SettingsScreen(
   ) { innerPadding ->
     Column(
       modifier = Modifier
-        .fillMaxWidth()
+        .fillMaxSize()
         .padding(innerPadding)
         .consumeWindowInsets(innerPadding)
-        .padding(16.dp)
+        .verticalScroll(rememberScrollState())
+        .padding(horizontal = 16.dp, vertical = 16.dp)
+        .padding(bottom = 32.dp)
     ) {
       SectionCard(title = BuildConfig.APP_DISPLAY_NAME.uppercase()) {
         Row(
@@ -150,7 +157,7 @@ fun SettingsScreen(
               .width(56.dp)
               .clip(CircleShape)
           )
-          Column {
+          Column(modifier = Modifier.weight(1f)) {
             Text(
               BuildConfig.APP_DISPLAY_NAME,
               style = MaterialTheme.typography.titleLarge,
@@ -184,7 +191,11 @@ fun SettingsScreen(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Text(strings.theme, style = MaterialTheme.typography.bodyLarge)
+          Text(
+            strings.theme,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyLarge
+          )
           Row {
             Icon(Icons.Filled.NightsStay, contentDescription = null, tint = NeonPrimary)
             Spacer(modifier = Modifier.width(8.dp))
@@ -237,56 +248,24 @@ fun SettingsScreen(
       Spacer(modifier = Modifier.height(16.dp))
 
       SectionCard(title = strings.data) {
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(10.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Column {
-            Text(strings.exportBackup, style = MaterialTheme.typography.bodyLarge)
-            Text(strings.exportBackupNote, color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
+        DataActionRow(
+          title = strings.exportBackup,
+          note = strings.exportBackupNote,
+          icon = { Icon(Icons.Filled.Upload, contentDescription = null, tint = NeonPrimary) },
+          onClick = {
+            val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            exportLauncher.launch("neonlist-backup-$date.json")
           }
-          Icon(Icons.Filled.Download, contentDescription = null, tint = NeonMutedForeground)
-        }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        androidx.compose.material3.TextButton(onClick = {
-          val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-          exportLauncher.launch("neonlist-backup-$date.json")
-        }) {
-          Text(strings.exportBackup, color = NeonPrimary)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(10.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Column {
-            Text(strings.importJson, style = MaterialTheme.typography.bodyLarge)
-            Text(strings.importJsonNote, color = NeonMutedForeground, style = MaterialTheme.typography.bodySmall)
-          }
-          Icon(Icons.Filled.Upload, contentDescription = null, tint = NeonMutedForeground)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        androidx.compose.material3.TextButton(onClick = {
-          importLauncher.launch(arrayOf("application/json", "*/*"))
-        }) {
-          Text(strings.importJson, color = NeonPrimary)
-        }
+        DataActionRow(
+          title = strings.importJson,
+          note = strings.importJsonNote,
+          icon = { Icon(Icons.Filled.Download, contentDescription = null, tint = NeonPrimary) },
+          onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -340,6 +319,7 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
   Column(
     modifier = Modifier
       .fillMaxWidth()
+      .clip(RoundedCornerShape(8.dp))
       .background(MaterialTheme.colorScheme.surfaceVariant)
       .padding(12.dp)
   ) {
@@ -350,9 +330,53 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
+private fun DataActionRow(
+  title: String,
+  note: String,
+  icon: @Composable () -> Unit,
+  onClick: () -> Unit
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(8.dp))
+      .background(MaterialTheme.colorScheme.surface)
+      .clickable(onClick = onClick)
+      .padding(horizontal = 14.dp, vertical = 12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp)
+  ) {
+    Column(modifier = Modifier.weight(1f)) {
+      Text(
+        title,
+        color = MaterialTheme.colorScheme.onSurface,
+        style = MaterialTheme.typography.bodyLarge
+      )
+      Spacer(modifier = Modifier.height(2.dp))
+      Text(
+        note,
+        color = NeonMutedForeground,
+        style = MaterialTheme.typography.bodySmall
+      )
+    }
+    Row(
+      modifier = Modifier
+        .size(44.dp)
+        .clip(RoundedCornerShape(8.dp))
+        .background(MaterialTheme.colorScheme.primaryContainer),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.Center
+    ) {
+      icon()
+    }
+  }
+}
+
+@Composable
 private fun StatBox(label: String, value: String) {
   Column(
     modifier = Modifier
+      .clip(RoundedCornerShape(8.dp))
       .background(MaterialTheme.colorScheme.surfaceVariant)
       .padding(12.dp)
   ) {

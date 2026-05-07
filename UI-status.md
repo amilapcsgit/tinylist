@@ -370,3 +370,39 @@ Representative device proof captured repeatedly:
     - SHA-256: `CA7CCD0BE2CA4CB8F2A75384E4B98DAEACC85A1C73F2386DD41D77DDCC8B0E46`
   - `releases/NeonList-1.3.aab`
     - SHA-256: `0DEBA8D29421FFBEE559168EFE25E5519960D945AABE6994518423D250B9C4B3`
+
+## Settings screen S25 Ultra polish pass
+- Date: 2026-05-07
+- Device report:
+  - Galaxy S25 Ultra screenshot shows the Settings screen clipping the Data section at the bottom.
+  - Several Settings labels render too dark against the dark neon card surface.
+- Fix applied:
+  - Settings content now uses vertical scrolling with bottom padding, so Data, stats, credits, and license can never be cut off by viewport height or gesture navigation.
+  - Data import/export controls are now compact full-width tappable action rows instead of tall rows plus separate text buttons.
+  - Settings labels now explicitly use readable `onSurface`/muted/neon colors inside cards.
+  - Section cards and data controls now use restrained 8dp rounding for a more professional settings-list feel.
+- Recommended next UI refinements:
+  - Make manual reorder menu copy stateful: `Start Manual Reorder` / `Done Reordering`.
+  - Add a one-time first-run hint for selected sum, then auto-hide after the first item selection.
+  - Add subtle haptic or snackbar feedback after import/export success.
+  - Add a compact `Data` summary line such as `7 lists / 42 items / offline only`.
+  - Keep Settings utilitarian and scannable; reserve cyberpunk motion/glow for list interactions where it helps the product feel fast.
+
+## NeonList 1.4 Settings icon correction
+- Date: 2026-05-07
+- Device report:
+  - Settings data action rows looked good after the S25 Ultra polish pass, but the import/export arrows were reversed for user expectations.
+- Fix applied:
+  - Export Backup now uses the outward/up upload icon.
+  - Import JSON now uses the inward/down download icon.
+- Version bump:
+  - `APP_VERSION_CODE=18`
+  - `APP_VERSION_NAME=1.4`
+- Verification:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+  - Release APK metadata confirms `versionCode=18`, `versionName=1.4`, `applicationId=com.cyberlist.neonlist`.
+- Artifacts copied:
+  - `releases/NeonList-1.4.apk`
+    - SHA-256: `4682C2014BFA7999AA70C54D7053FF1A443F05BE0C8BA989ACCB3B6AC6539918`
+  - `releases/NeonList-1.4.aab`
+    - SHA-256: `679650AD47177B35577B7F7900EF9F352D1F62D21554B135EA83C2A0AFB9AE77`
