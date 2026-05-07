@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.cyberlist.neonlist.AppViewModel
+import com.cyberlist.neonlist.BuildConfig
 import com.cyberlist.neonlist.R
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.NeonPrimary
@@ -134,7 +135,7 @@ fun SettingsScreen(
         .consumeWindowInsets(innerPadding)
         .padding(16.dp)
     ) {
-      SectionCard(title = strings.neonList.uppercase()) {
+      SectionCard(title = BuildConfig.APP_DISPLAY_NAME.uppercase()) {
         Row(
           modifier = Modifier.fillMaxWidth(),
           verticalAlignment = Alignment.CenterVertically,
@@ -142,7 +143,7 @@ fun SettingsScreen(
         ) {
           Image(
             painter = painterResource(id = R.drawable.neonlist_logo),
-            contentDescription = strings.neonList,
+            contentDescription = BuildConfig.APP_DISPLAY_NAME,
             contentScale = ContentScale.Crop,
             modifier = Modifier
               .height(56.dp)
@@ -151,7 +152,7 @@ fun SettingsScreen(
           )
           Column {
             Text(
-              strings.neonList,
+              BuildConfig.APP_DISPLAY_NAME,
               style = MaterialTheme.typography.titleLarge,
               color = MaterialTheme.colorScheme.onSurface
             )
@@ -167,7 +168,7 @@ fun SettingsScreen(
               modifier = Modifier.clickable { uriHandler.openUri("https://github.com/amilapcsgit") }
             )
             Text(
-              "v1.0.0 // ${strings.androidBuild}",
+              "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) // ${strings.androidBuild}",
               color = NeonMutedForeground,
               style = MaterialTheme.typography.bodySmall
             )

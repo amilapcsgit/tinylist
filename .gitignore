@@ -12,7 +12,9 @@ android/.idea/
 android/**/build/
 android/**/out/
 android/local.properties
+android/release.properties
 android/.kotlin/
+.local/
 
 # Node/old source
 source/node_modules/
