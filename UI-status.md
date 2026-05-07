@@ -406,3 +406,22 @@ Representative device proof captured repeatedly:
     - SHA-256: `4682C2014BFA7999AA70C54D7053FF1A443F05BE0C8BA989ACCB3B6AC6539918`
   - `releases/NeonList-1.4.aab`
     - SHA-256: `679650AD47177B35577B7F7900EF9F352D1F62D21554B135EA83C2A0AFB9AE77`
+
+## NeonList 1.5 package identity fix
+- Date: 2026-05-07
+- Play Console blocker:
+  - Package/app ID `com.cyberlist.neonlist` was already taken.
+- Fix applied:
+  - Play Store `applicationId` changed to `com.pcslanka.neonlist`.
+  - Internal Android namespace remains `com.cyberlist.neonlist` so existing Kotlin source packages, `R`, and `BuildConfig` imports continue to compile without a large refactor.
+- Version bump:
+  - `APP_VERSION_CODE=19`
+  - `APP_VERSION_NAME=1.5`
+- Verification:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+  - Release APK metadata confirms `applicationId=com.pcslanka.neonlist`, `versionCode=19`, `versionName=1.5`.
+- Artifacts copied:
+  - `releases/NeonList-1.5.apk`
+    - SHA-256: `06039D5978C7F303B6820723D8FCBF27039B14271DD5A9BB5456A9688FD17DD3`
+  - `releases/NeonList-1.5.aab`
+    - SHA-256: `A01C2D197F4B386C405DBEB0F67DB089DE53B85C6AA6B747D20FE37147A09C9D`

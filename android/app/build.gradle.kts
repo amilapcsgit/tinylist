@@ -25,7 +25,7 @@ fun releaseValue(name: String): String? =
     ?: releaseProperties.getProperty(name)
 
 android {
-  namespace = appId
+  namespace = "com.cyberlist.neonlist"
   compileSdk = 35
 
   defaultConfig {
