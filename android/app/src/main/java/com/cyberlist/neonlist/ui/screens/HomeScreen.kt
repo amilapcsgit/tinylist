@@ -77,6 +77,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -572,7 +573,10 @@ private fun ListCard(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
+          Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
             Box(
               modifier = Modifier
                 .width(6.dp)
@@ -583,7 +587,9 @@ private fun ListCard(
             Text(
               list.title,
               style = MaterialTheme.typography.titleLarge,
-              color = primaryTextColor
+              color = primaryTextColor,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
             )
           }
           Row(verticalAlignment = Alignment.CenterVertically) {

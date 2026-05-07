@@ -299,3 +299,74 @@ Representative device proof captured repeatedly:
 
 ### Remaining issue
 - Manual drag reorder after import was not re-verified in this pass because adb gesture injection remains unreliable for Compose long-press drag interactions; previous branch work already covered reorder behavior separately.
+
+## Screenshot and onboarding audit - Play Store polish pass
+- Date: 2026-05-07
+- Inputs: Functionality screenshot set for NeonList 1.2, README/current analysis docs, current Room/Compose implementation.
+
+### Product read
+- NeonList's strongest differentiator is not basic to-do management. It is a fast offline numeric list tool with gesture shortcuts, selective summation, undo, and manual sorting.
+- The screenshots show the core power flow clearly once known:
+  - tap item: select it for `SELECTED SUM`.
+  - double tap item: mark complete.
+  - swipe right: edit list/item.
+  - swipe left: delete list/item.
+  - hold + drag down: add near the current row.
+  - hold + drag up: duplicate row/list.
+  - menu: A-Z, completion/default/manual order, clear selection, clear completed, duplicate list.
+- The main Play Store risk is discoverability. New users can miss the multi-axis gesture model and numeric extraction, so first-run data must teach through real rows.
+
+### UI refinements applied
+- Home list titles now use a weighted text area with single-line ellipsis, so long tutorial/demo titles cannot push the counter badge off-screen.
+- Item rows now give the text block a weighted area, so long tutorial text cannot crowd done/drag controls.
+
+### Demo data applied for fresh installs
+- Replaced generic starter data with:
+  - `Start Here - NeonList Tour`
+  - `Bag Balance Demo KG`
+  - `Groceries Demo`
+  - `Ideas`
+- The tutorial list explains offline storage, selected sums, double tap completion, edit/delete swipes, add/duplicate long-drag gestures, and sort/cleanup menu actions.
+- The bag demo uses realistic suitcase rows such as `PM blue cabin 23.4 KG` and `Carpisa orange 29.2 KG`, making the bottom total/selective total feature visible immediately.
+- Limit/goal notes avoid ending in digits, because NeonList intentionally extracts the final numeric value in item text for summation.
+
+### Recommended next polish
+- Add a tiny first-run visual cue near the bottom sum bar or first list row only until the first selection, because selected sum is the app's "aha" moment.
+- Add a menu label state such as `Start Manual Reorder` / `Finish Manual Reorder` rather than one static `Manual Order` label.
+- Consider excluding completed items from `TOTAL SUM` only if user testing expects done items to be removed from active calculations. Current behavior counts all numeric rows unless a selection is active, which is useful for luggage totals.
+
+## NeonList 1.3 version bump and release attempt
+- Date: 2026-05-07
+- Version bump:
+  - `APP_VERSION_CODE=17`
+  - `APP_VERSION_NAME=1.3`
+- Wording correction:
+  - Tutorial/demo copy now says `Hold + drag up/down`, because a normal drag scrolls the list.
+  - README gesture table now documents `HOLD_DRAG_UP` and `HOLD_DRAG_DOWN`.
+- Documentation updates:
+  - README latest APK references updated to `NeonList-1.3.apk`.
+  - Play Store release guide version identity updated to `1.3 (17)`.
+  - Added `releases/NeonList-1.3.md`.
+- Verification:
+  - `./gradlew :app:testDebugUnitTest` PASS.
+  - `./gradlew :app:assembleDebug` PASS.
+  - `./gradlew :app:assembleRelease` BLOCKED by signing safety check:
+    - `Release build requires KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD. Refusing to sign with debug.`
+- Release note:
+  - A true release APK was not produced in this pass because signing secrets are not configured in the current environment. This is expected and protects the Play Store release from being built with debug signing.
+
+## NeonList 1.3 signed release build
+- Date: 2026-05-07
+- Signing:
+  - Keystore path: `D:\Projects\Neonlist\KEY\neonlist.keystore`
+  - Alias used: `key0neonlist`
+  - Secrets were supplied through environment variables during the Gradle process and were not written to repo files.
+- Commands:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+- Metadata:
+  - Release APK metadata confirms `versionCode=17`, `versionName=1.3`, `applicationId=com.cyberlist.neonlist`.
+- Artifacts copied:
+  - `releases/NeonList-1.3.apk`
+    - SHA-256: `CA7CCD0BE2CA4CB8F2A75384E4B98DAEACC85A1C73F2386DD41D77DDCC8B0E46`
+  - `releases/NeonList-1.3.aab`
+    - SHA-256: `0DEBA8D29421FFBEE559168EFE25E5519960D945AABE6994518423D250B9C4B3`

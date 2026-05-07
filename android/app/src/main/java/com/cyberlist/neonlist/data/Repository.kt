@@ -63,16 +63,36 @@ class Repository(
 
     val now = System.currentTimeMillis()
     val lists = listOf(
-      ListEntity(id = "1", title = "Todos", color = "red", createdAt = now, order = 0),
-      ListEntity(id = "2", title = "Groceries", color = "green", createdAt = now, order = 1),
-      ListEntity(id = "3", title = "Ideas", color = "cyan", createdAt = now, order = 2)
+      ListEntity(id = "tour", title = "Start Here - NeonList Tour", color = "cyan", createdAt = now, order = 0),
+      ListEntity(id = "bag-demo", title = "Bag Balance Demo KG", color = "lime", createdAt = now + 1, order = 1),
+      ListEntity(id = "groceries-demo", title = "Groceries Demo", color = "green", createdAt = now + 2, order = 2),
+      ListEntity(id = "ideas-demo", title = "Ideas", color = "blue", createdAt = now + 3, order = 3)
     )
     val items = listOf(
-      ItemEntity(id = "101", listId = "1", text = "Welcome to NeonList", isDone = false, color = "red", createdAt = now, order = 0),
-      ItemEntity(id = "102", listId = "1", text = "Swipe right to edit", isDone = false, color = "blue", createdAt = now + 1, order = 1),
-      ItemEntity(id = "103", listId = "1", text = "Swipe left to delete", isDone = true, color = "green", createdAt = now + 2, order = 2),
-      ItemEntity(id = "104", listId = "2", text = "Milk 2.50", isDone = false, color = "green", createdAt = now + 3, order = 0),
-      ItemEntity(id = "105", listId = "2", text = "Bread 1.20", isDone = false, color = "orange", createdAt = now + 4, order = 1)
+      ItemEntity(id = "tour-01", listId = "tour", text = "Welcome - your data stays fully offline", isDone = false, color = "cyan", createdAt = now, order = 0),
+      ItemEntity(id = "tour-02", listId = "tour", text = "Tap items to select and total only those values", isDone = false, color = "green", createdAt = now + 1, order = 1),
+      ItemEntity(id = "tour-03", listId = "tour", text = "Double tap an item to mark it done", isDone = false, color = "lime", createdAt = now + 2, order = 2),
+      ItemEntity(id = "tour-04", listId = "tour", text = "Swipe right to edit a list or item", isDone = false, color = "blue", createdAt = now + 3, order = 3),
+      ItemEntity(id = "tour-05", listId = "tour", text = "Swipe left to delete, then use Undo if needed", isDone = false, color = "red", createdAt = now + 4, order = 4),
+      ItemEntity(id = "tour-06", listId = "tour", text = "Hold + drag down to add near the row", isDone = false, color = "orange", createdAt = now + 5, order = 5),
+      ItemEntity(id = "tour-07", listId = "tour", text = "Hold + drag up to duplicate quickly", isDone = false, color = "purple", createdAt = now + 6, order = 6),
+      ItemEntity(id = "tour-08", listId = "tour", text = "Use the menu for A-Z, manual order, and cleanup", isDone = false, color = "cyan", createdAt = now + 7, order = 7),
+
+      ItemEntity(id = "bag-01", listId = "bag-demo", text = "PM blue cabin 23.4 KG", isDone = false, color = "blue", createdAt = now + 8, order = 0),
+      ItemEntity(id = "bag-02", listId = "bag-demo", text = "PM black main 27.2 KG", isDone = false, color = "green", createdAt = now + 9, order = 1),
+      ItemEntity(id = "bag-03", listId = "bag-demo", text = "Carpisa orange 29.2 KG", isDone = false, color = "orange", createdAt = now + 10, order = 2),
+      ItemEntity(id = "bag-04", listId = "bag-demo", text = "Carpisa pink 26.5 KG", isDone = false, color = "purple", createdAt = now + 11, order = 3),
+      ItemEntity(id = "bag-05", listId = "bag-demo", text = "PM black spare 27.2 KG", isDone = false, color = "green", createdAt = now + 12, order = 4),
+      ItemEntity(id = "bag-06", listId = "bag-demo", text = "PM blue spare 23.4 KG", isDone = false, color = "blue", createdAt = now + 13, order = 5),
+      ItemEntity(id = "bag-07", listId = "bag-demo", text = "Limit note - keep each checked bag under thirty KG", isDone = false, color = "lime", createdAt = now + 14, order = 6),
+      ItemEntity(id = "bag-08", listId = "bag-demo", text = "Goal note - balance the trip total near one forty KG", isDone = false, color = "cyan", createdAt = now + 15, order = 7),
+
+      ItemEntity(id = "grocery-01", listId = "groceries-demo", text = "Milk 2.50", isDone = false, color = "green", createdAt = now + 16, order = 0),
+      ItemEntity(id = "grocery-02", listId = "groceries-demo", text = "Bread 1.20", isDone = false, color = "orange", createdAt = now + 17, order = 1),
+      ItemEntity(id = "grocery-03", listId = "groceries-demo", text = "Coffee 4.80", isDone = false, color = "purple", createdAt = now + 18, order = 2),
+
+      ItemEntity(id = "idea-01", listId = "ideas-demo", text = "Create a packing list per suitcase", isDone = false, color = "blue", createdAt = now + 19, order = 0),
+      ItemEntity(id = "idea-02", listId = "ideas-demo", text = "Use selected sum to compare only heavy items", isDone = false, color = "cyan", createdAt = now + 20, order = 1)
     )
     listDao.insertAll(lists)
     itemDao.upsertAll(items)
