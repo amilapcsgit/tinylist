@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$packageName = "com.cyberlist.neonlist"
+$packageName = "com.pcslanka.neonlist"
 $androidDir = Join-Path $ProjectRoot "android"
 
 function Resolve-AdbPath {

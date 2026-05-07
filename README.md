@@ -10,7 +10,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)](LICENSE)
-[![Download NeonList](https://img.shields.io/badge/Download-NeonList_1.5-00C853?style=for-the-badge&logo=android&logoColor=white)](https://github.com/amilapcsgit/tinylist/releases/download/v1.5/NeonList-1.5.apk)
+[![Download NeonList](https://img.shields.io/badge/Download-NeonList_1.5-00C853?style=for-the-badge&logo=android&logoColor=white)](https://github.com/amilapcsgit/NeonList/releases/download/v1.5/NeonList-1.5.apk)
 
 ![Stars](https://img.shields.io/badge/⭐_1k+-Stars-9C27B0?style=for-the-badge)
 ![Forks](https://img.shields.io/badge/🔱_500+-Forks-00BCD4?style=for-the-badge)
@@ -36,7 +36,7 @@
 
 ---
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/tinylist)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/NeonList)
 [![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com)
 [![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://amilaprasad.it)
 
@@ -70,10 +70,10 @@ NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpun
 
 ```bash
 # Clone the repository
-git clone https://github.com/amilapcsgit/tinylist.git
+git clone https://github.com/amilapcsgit/NeonList.git
 
 # Navigate to project directory
-cd tinylist/android
+cd NeonList/android
 
 # Build debug APK
 ./gradlew :app:assembleDebug
@@ -265,7 +265,7 @@ Special thanks to:
 ## 📞 Contact
 
 - 📧 **Email**: [amilapcsgit@gmail.com](mailto:amilapcsgit@gmail.com)
-- 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/tinylist/issues)
+- 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/NeonList/issues)
 - 🌐 **Website**: [amilaprasad.it](https://amilaprasad.it)
 
 ---

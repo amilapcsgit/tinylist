@@ -11,7 +11,7 @@
   - Delete + undo initially exposed a restore-path crash risk during automation; fixed in subsequent commits by deterministic list upsert + transaction-safe delete path.
 
 ## 1) Environment
-- Repo: `tinylist` (NeonList)
+- Repo: `NeonList`
 - Branch: `playconsolerediness`
 - Commit under final verification: `5a17c53`
 - Android Studio: `AI-252.28238.7.2523.14688667` (from `C:\Program Files\Android\Android Studio\product-info.json`)
@@ -59,7 +59,7 @@
 
 ## 4) Evidence
 - Key logcat outcome:
-  - `NO_CRASH_FOUND` for `com.cyberlist.neonlist` during final verification sequence.
+  - `NO_CRASH_FOUND` for `com.pcslanka.neonlist` during final verification sequence.
 - Screenshots captured (not committed):
   - `C:\Users\Amilapcs\source\repos\neonlist-test-artifacts\2026-03-02\ss_home.png`
   - `C:\Users\Amilapcs\source\repos\neonlist-test-artifacts\2026-03-02\ss_settings.png`
@@ -99,8 +99,8 @@
 ### Exact test commands run
 - `./gradlew :app:assembleDebug` (PASS)
 - `./gradlew :app:assembleDebug :app:installDebug` (PASS)
-- `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1` via SDK adb (PASS)
-- `adb shell pidof com.cyberlist.neonlist` (PASS, app process running)
+- `adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1` via SDK adb (PASS)
+- `adb shell pidof com.pcslanka.neonlist` (PASS, app process running)
 - `adb logcat -d | rg "FATAL EXCEPTION|AndroidRuntime: FATAL|Process: com\\.cyberlist\\.neonlist"` (no app crash traces)
 - Attempted strict drag automation for manual reorder:
   - `adb shell input draganddrop 500 780 500 330 1200`
@@ -129,17 +129,17 @@
 
 ### Exact rebuild/install flow used before each test
 1. `./gradlew :app:assembleDebug` (from `android/`)
-2. `adb uninstall com.cyberlist.neonlist` (non-zero ignored when absent)
+2. `adb uninstall com.pcslanka.neonlist` (non-zero ignored when absent)
 3. `./gradlew :app:installDebug`
-4. `adb shell pm path com.cyberlist.neonlist`
-5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-6. `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+4. `adb shell pm path com.pcslanka.neonlist`
+5. `adb shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+6. `adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`
 
 Automation helper committed:
 - `scripts/fresh-debug-install-check.ps1`
 
 Representative device proof captured repeatedly:
-- `package:/data/app/com.cyberlist.neonlist-.../base.apk`
+- `package:/data/app/com.pcslanka.neonlist-.../base.apk`
 - `versionCode=14 minSdk=29 targetSdk=35`
 - `versionName=1.1`
 
@@ -193,11 +193,11 @@ Representative device proof captured repeatedly:
 
 ### Exact rebuild/install flow used before each test block
 1. From `android/`: `.\gradlew.bat :app:assembleDebug`
-2. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+2. `D:\Projects\Android\platform-tools\adb.exe uninstall com.pcslanka.neonlist`
 3. From `android/`: `.\gradlew.bat :app:installDebug`
-4. `adb shell pm path com.cyberlist.neonlist`
-5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-6. Launch app (`adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`) or (`adb shell am start -n com.cyberlist.neonlist/.MainActivity`)
+4. `adb shell pm path com.pcslanka.neonlist`
+5. `adb shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+6. Launch app (`adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`) or (`adb shell am start -n com.pcslanka.neonlist/com.cyberlist.neonlist.MainActivity`)
 
 ### Installed package proof
 - `versionCode=14 minSdk=29 targetSdk=35`
@@ -262,14 +262,14 @@ Representative device proof captured repeatedly:
 ### Rebuild/install commands used
 1. `cd android`
 2. `./gradlew :app:assembleDebug`
-3. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+3. `D:\Projects\Android\platform-tools\adb.exe uninstall com.pcslanka.neonlist`
 4. `./gradlew :app:installDebug`
-5. `D:\Projects\Android\platform-tools\adb.exe shell pm path com.cyberlist.neonlist`
-6. `D:\Projects\Android\platform-tools\adb.exe shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-7. `D:\Projects\Android\platform-tools\adb.exe shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+5. `D:\Projects\Android\platform-tools\adb.exe shell pm path com.pcslanka.neonlist`
+6. `D:\Projects\Android\platform-tools\adb.exe shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+7. `D:\Projects\Android\platform-tools\adb.exe shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`
 
 ### Installed package proof
-- `package:/data/app/com.cyberlist.neonlist-EUEYRe0TaAyxC0lMAMVSbA==/base.apk`
+- `package:/data/app/com.pcslanka.neonlist-EUEYRe0TaAyxC0lMAMVSbA==/base.apk`
 - `versionCode=15 minSdk=29 targetSdk=35`
 - `versionName=1.2`
 
@@ -364,7 +364,7 @@ Representative device proof captured repeatedly:
 - Commands:
   - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
 - Metadata:
-  - Release APK metadata confirms `versionCode=17`, `versionName=1.3`, `applicationId=com.cyberlist.neonlist`.
+  - Release APK metadata confirms `versionCode=17`, `versionName=1.3`, `applicationId=com.pcslanka.neonlist`.
 - Artifacts copied:
   - `releases/NeonList-1.3.apk`
     - SHA-256: `CA7CCD0BE2CA4CB8F2A75384E4B98DAEACC85A1C73F2386DD41D77DDCC8B0E46`
@@ -400,7 +400,7 @@ Representative device proof captured repeatedly:
   - `APP_VERSION_NAME=1.4`
 - Verification:
   - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
-  - Release APK metadata confirms `versionCode=18`, `versionName=1.4`, `applicationId=com.cyberlist.neonlist`.
+  - Release APK metadata confirms `versionCode=18`, `versionName=1.4`, `applicationId=com.pcslanka.neonlist`.
 - Artifacts copied:
   - `releases/NeonList-1.4.apk`
     - SHA-256: `4682C2014BFA7999AA70C54D7053FF1A443F05BE0C8BA989ACCB3B6AC6539918`
@@ -410,7 +410,7 @@ Representative device proof captured repeatedly:
 ## NeonList 1.5 package identity fix
 - Date: 2026-05-07
 - Play Console blocker:
-  - Package/app ID `com.cyberlist.neonlist` was already taken.
+  - The previous package/app ID was already taken.
 - Fix applied:
   - Play Store `applicationId` changed to `com.pcslanka.neonlist`.
   - Internal Android namespace remains `com.cyberlist.neonlist` so existing Kotlin source packages, `R`, and `BuildConfig` imports continue to compile without a large refactor.
@@ -430,7 +430,7 @@ Representative device proof captured repeatedly:
 - Date: 2026-05-07
 - Symptom:
   - Android Studio installed the app but failed to launch with:
-    - `Activity class {com.cyberlist.neonlist/com.cyberlist.neonlist.MainActivity} does not exist`
+    - `Activity class {com.pcslanka.neonlist/com.cyberlist.neonlist.MainActivity} does not exist`
 - Root cause:
   - The Play Store `applicationId` changed to `com.pcslanka.neonlist`, while Kotlin source classes intentionally remain in `com.cyberlist.neonlist`.
   - Relative manifest class names such as `.MainActivity` are risky after that split because launch tooling and merged manifest resolution can point at the wrong package/activity pair.

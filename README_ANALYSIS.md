@@ -1,7 +1,7 @@
 # 📋 NeonList Code Analysis - Executive Summary
 
 **Date:** February 5, 2026  
-**Project:** NeonList (Tinylist-antigravity)  
+**Project:** NeonList  
 **Analyzed By:** Antigravity AI Code Analyzer  
 
 ---

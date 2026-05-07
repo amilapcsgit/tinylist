@@ -7,7 +7,7 @@ Welcome! This guide will help you navigate through all the analysis documents.
 ## 🗂️ Document Structure
 
 ```
-tinylist/
+NeonList/
 ├── 📋 README_ANALYSIS.md          ← START HERE (This file)
 ├── ⚡ QUICK_IMPROVEMENTS.md        ← Quick wins & priorities
 ├── 📖 CODE_ANALYSIS_REPORT.md     ← Detailed analysis & examples
