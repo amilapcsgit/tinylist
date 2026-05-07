@@ -425,3 +425,18 @@ Representative device proof captured repeatedly:
     - SHA-256: `06039D5978C7F303B6820723D8FCBF27039B14271DD5A9BB5456A9688FD17DD3`
   - `releases/NeonList-1.5.aab`
     - SHA-256: `A01C2D197F4B386C405DBEB0F67DB089DE53B85C6AA6B747D20FE37147A09C9D`
+
+## Android Studio launch fix after package ID change
+- Date: 2026-05-07
+- Symptom:
+  - Android Studio installed the app but failed to launch with:
+    - `Activity class {com.cyberlist.neonlist/com.cyberlist.neonlist.MainActivity} does not exist`
+- Root cause:
+  - The Play Store `applicationId` changed to `com.pcslanka.neonlist`, while Kotlin source classes intentionally remain in `com.cyberlist.neonlist`.
+  - Relative manifest class names such as `.MainActivity` are risky after that split because launch tooling and merged manifest resolution can point at the wrong package/activity pair.
+- Fix applied:
+  - Manifest now uses fully qualified class names:
+    - `android:name="com.cyberlist.neonlist.NeonListApplication"`
+    - `android:name="com.cyberlist.neonlist.MainActivity"`
+- Android Studio note:
+  - If the IDE still tries the old component, edit the Run Configuration to launch the default activity, or delete/recreate the `app` run configuration after Gradle sync.

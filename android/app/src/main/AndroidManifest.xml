@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application
-    android:name=".NeonListApplication"
+    android:name="com.cyberlist.neonlist.NeonListApplication"
     android:allowBackup="true"
     android:label="${appLabel}"
     android:icon="@mipmap/ic_launcher"
@@ -10,7 +10,7 @@
     android:theme="@style/Theme.NeonList">
 
     <activity
-      android:name=".MainActivity"
+      android:name="com.cyberlist.neonlist.MainActivity"
       android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
