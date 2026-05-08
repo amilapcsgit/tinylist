@@ -36,6 +36,16 @@ NeonList is an offline Android list manager built for people who need fast lists
 
 ---
 
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/NeonList)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com)
+[![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://amilaprasad.it)
+
+*© 2026 L.J. Amila Prasad Perera. All rights reserved. Built with passion.*
+
+</div>
+
+---
+
 ## Why NeonList
 
 NeonList is not just another to-do list. It is a small, fast, offline-first utility for managing lists where numbers matter.
@@ -54,18 +64,17 @@ NeonList extracts the final number in each item and shows the total instantly. T
 
 ---
 
-## Core Features
+## ✨ Features
 
-- **100% offline:** no account, no internet requirement, no cloud lock-in.
-- **Instant numeric totals:** type natural list items with numbers and get live totals.
-- **Selected sums:** tap specific rows to calculate only selected items.
-- **Gesture workflow:** edit, delete, add, duplicate, and complete items quickly.
-- **Local JSON backup:** export your lists to a JSON file using Android's system file picker.
-- **Import JSON:** restore or merge saved local backups.
-- **Manual ordering:** reorder lists and items when the exact sequence matters.
-- **Search:** find lists and items quickly.
-- **Multilingual UI:** English, Italian, and Sinhala.
-- **Dark and light neon themes:** polished Material 3 + Jetpack Compose UI.
+NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpunk UI**, it leverages **Material 3** and **Jetpack Compose** to deliver a fluid, haptic-rich experience.
+
+- 💎 **Neon Aesthetics**: High-contrast, vibrant visuals that pop
+- 🌍 **Global Access**: Support for English, Italian, and Sinhala
+- 🛡️ **Zero Trace**: 100% offline-first storage with Room
+- ⚡ **Flow UX**: Gesture-driven interactions for power users
+- 🎯 **Smart Summation**: Auto-extracts numeric values for real-time aggregation
+- 🔄 **Temporal Undo**: Multi-stack history rollback for all data mutations
+
 
 ---
 
@@ -104,7 +113,6 @@ NeonList is designed to keep your data on your device.
 NeonList is being prepared for Google Play. Until the Play Store listing is live, release builds are available from GitHub.
 
 - **Latest APK:** [NeonList-1.5.apk](https://github.com/amilapcsgit/NeonList/releases/download/v1.5/NeonList-1.5.apk)
-- **Latest AAB:** [NeonList-1.5.aab](https://github.com/amilapcsgit/NeonList/releases/download/v1.5/NeonList-1.5.aab)
 - **Release notes:** [releases/NeonList-1.5.md](releases/NeonList-1.5.md)
 - **All releases:** [github.com/amilapcsgit/NeonList/releases](https://github.com/amilapcsgit/NeonList/releases)
 
@@ -132,6 +140,12 @@ cd NeonList/android
 ```
 
 Release builds require the signing keystore values to be supplied through local properties or environment variables. Signing secrets are not stored in this repository.
+
+---
+
+### 📊 Architecture Overview
+
+<img src="screenshots/architecture_diagram.jpg" alt="Architecture Diagram" width="600"/>
 
 ---
 
@@ -166,6 +180,27 @@ screenshots/       App screenshots and Play Store preview assets
 
 ---
 
+## 📸 Screenshots
+
+<details>
+<summary>📂 <b>CLICK TO EXPAND SCREENSHOTS</b></summary>
+
+| Home Overview | Edit Action | Delete Action |
+|:---:|:---:|:---:|
+| ![Home overview](screenshots/home_lists_overview.jpg) | ![Home edit action](screenshots/home_action_edit.jpg) | ![Home delete action](screenshots/home_action_delete.jpg) |
+
+| Duplicate Action | List Detail | List Menu |
+|:---:|:---:|:---:|
+| ![Home duplicate action](screenshots/home_action_duplicate.jpg) | ![List detail items](screenshots/list_detail_items.jpg) | ![List detail menu](screenshots/list_detail_menu.jpg) |
+
+| Settings Screen |
+|:---:|
+| ![Settings screen](screenshots/settings_screen.jpg) |
+
+</details>
+
+---
+
 ## Roadmap
 
 - Publish NeonList on Google Play.
@@ -175,22 +210,64 @@ screenshots/       App screenshots and Play Store preview assets
 
 ---
 
-## License
 
-This project uses a custom license. See [LICENSE](LICENSE) for the full terms.
+## 📄 License
+
+This software is protected by a **Custom License**. It is **Free for Personal Use** but restricted for commercial distribution. See the [LICENSE](LICENSE) file for details.
+
+```text
+Copyright (c) 2026 L.J. Amila Prasad Perera
+
+1. NON-COMMERCIAL USE ONLY
+2. NO REDISTRIBUTION
+3. ATTRIBUTION REQUIRED
+4. NO WARRANTY
+```
 
 ---
 
-## Author
+## 🙏 Acknowledgments
 
-Created by **L.J. Amila Prasad Perera**
+Special thanks to:
 
-- GitHub: [amilapcsgit](https://github.com/amilapcsgit)
-- Website: [amilaprasad.it](https://amilaprasad.it)
+- **Jetpack Compose Team** - For the amazing UI toolkit
+- **Material Design** - For the design system
+- **Android Community** - For continuous support and inspiration
+- **Contributors** - Everyone who has contributed to this project
+
+**Technologies Used:**
+- [Kotlin](https://kotlinlang.org/) - Programming language
+- [Jetpack Compose](https://developer.android.com/jetpack/compose) - UI framework
+- [Room](https://developer.android.com/training/data-storage/room) - Database
+- [Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) - Async programming
+- [Material 3](https://m3.material.io/) - Design system
+
+---
+
+## 📞 Contact
+
+- 📧 **Email**: [amilapcsgit@gmail.com](mailto:amilapcsgit@gmail.com)
+- 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/Neonlist/issues)
+- 🌐 **Website**: [amilaprasad.it](https://amilaprasad.it)
+
+---
+
+<div align="center">
+
+### ⚡ Built with Passion ⚡
+
+Made with 💜 by **L.J. Amila Prasad Perera** | Powered by Kotlin & Jetpack Compose
+
+---
+
+![Made with Love](https://img.shields.io/badge/Made%20with-💜-purple?style=for-the-badge)
+![Powered by Kotlin](https://img.shields.io/badge/Powered%20by-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Built with Compose](https://img.shields.io/badge/Built%20with-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+
 
 <div align="center">
 
 **NeonList**  
 Offline lists. Instant totals. Local backup.
-
+*Optimized by a person with 25 year experiance in IT support for real-world use*
 </div>
