@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,6 +51,7 @@ fun ColorGrid(selected: String, onSelect: (String) -> Unit) {
           val color = NeonColorMap[colorName] ?: NeonPrimary
           val isSelected = selected == colorName
 
+          val selectionColor = MaterialTheme.colorScheme.onSurface
           Box(
             modifier = Modifier
               .weight(1f)
@@ -65,7 +67,7 @@ fun ColorGrid(selected: String, onSelect: (String) -> Unit) {
                 contentDescription = colorName.replaceFirstChar { it.titlecase(Locale.getDefault()) }
               }
               .then(
-                if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(8.dp)) else Modifier
+                if (isSelected) Modifier.border(2.dp, selectionColor, RoundedCornerShape(8.dp)) else Modifier
               ),
             contentAlignment = Alignment.Center
           ) {
@@ -73,7 +75,7 @@ fun ColorGrid(selected: String, onSelect: (String) -> Unit) {
               Icon(
                 Icons.Filled.Check,
                 contentDescription = null,
-                tint = Color.White,
+                tint = selectionColor,
                 modifier = androidx.compose.ui.Modifier.padding(4.dp)
               )
             }

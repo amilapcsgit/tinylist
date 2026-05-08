@@ -13,11 +13,23 @@ interface ListDao {
   @Query("SELECT * FROM lists ORDER BY sort_order ASC")
   fun observeLists(): Flow<List<ListEntity>>
 
+  @Query("SELECT * FROM lists ORDER BY sort_order ASC")
+  suspend fun getAll(): List<ListEntity>
+
+  @Insert(onConflict = OnConflictStrategy.ABORT)
+  suspend fun insert(list: ListEntity)
+
+  @Insert(onConflict = OnConflictStrategy.ABORT)
+  suspend fun insertAll(lists: List<ListEntity>)
+
+  @Update
+  suspend fun update(list: ListEntity)
+
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun upsert(list: ListEntity)
 
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
-  suspend fun upsertAll(lists: List<ListEntity>)
+  @Update
+  suspend fun updateAll(lists: List<ListEntity>)
 
   @Delete
   suspend fun delete(list: ListEntity)
@@ -28,23 +40,32 @@ interface ListDao {
   @Query("SELECT * FROM lists WHERE id = :listId LIMIT 1")
   suspend fun getById(listId: String): ListEntity?
 
+  @Query("SELECT * FROM lists WHERE title = :title LIMIT 1")
+  suspend fun getByTitle(title: String): ListEntity?
+
   @Query("SELECT COUNT(*) FROM lists")
   suspend fun count(): Int
 }
 
 @Dao
 interface ItemDao {
-  @Query("SELECT * FROM items ORDER BY createdAt ASC")
+  @Query("SELECT * FROM items ORDER BY sort_order ASC, createdAt ASC")
   fun observeItems(): Flow<List<ItemEntity>>
 
-  @Query("SELECT * FROM items WHERE listId = :listId ORDER BY createdAt ASC")
+  @Query("SELECT * FROM items WHERE listId = :listId ORDER BY sort_order ASC, createdAt ASC")
   fun observeItemsByList(listId: String): Flow<List<ItemEntity>>
+
+  @Query("SELECT * FROM items WHERE listId = :listId ORDER BY sort_order ASC, createdAt ASC")
+  suspend fun getByListId(listId: String): List<ItemEntity>
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun upsert(item: ItemEntity)
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun upsertAll(items: List<ItemEntity>)
+
+  @Update
+  suspend fun updateAll(items: List<ItemEntity>)
 
   @Delete
   suspend fun delete(item: ItemEntity)
@@ -57,6 +78,9 @@ interface ItemDao {
 
   @Query("DELETE FROM items WHERE listId = :listId AND isDone = 1")
   suspend fun clearCompleted(listId: String)
+
+  @Query("SELECT MAX(sort_order) FROM items WHERE listId = :listId")
+  suspend fun maxOrder(listId: String): Long?
 
   @Query("SELECT COUNT(*) FROM items")
   suspend fun count(): Int

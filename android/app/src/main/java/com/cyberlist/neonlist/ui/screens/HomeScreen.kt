@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -76,6 +77,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -93,6 +95,7 @@ import com.cyberlist.neonlist.ui.NeonPrimary
 import com.cyberlist.neonlist.ui.NeonSecondary
 import com.cyberlist.neonlist.ui.NeonMutedForeground
 import com.cyberlist.neonlist.ui.LocalStrings
+import com.cyberlist.neonlist.ui.LocalNeonIsDark
 import com.cyberlist.neonlist.ui.components.ColorGrid
 import com.cyberlist.neonlist.ui.components.NeonIconButton
 import com.cyberlist.neonlist.ui.components.NeonScaffold
@@ -101,6 +104,8 @@ import com.cyberlist.neonlist.ui.components.rememberMultiAxisSwipeActions
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun HomeScreen(
@@ -122,26 +127,67 @@ fun HomeScreen(
   var newColor by remember { mutableStateOf("green") }
   var sortMenuOpen by remember { mutableStateOf(false) }
   var editTarget by remember { mutableStateOf<ListEntity?>(null) }
+  var isManualReorderMode by remember { mutableStateOf(false) }
 
-  val manualLists = remember(lists) { mutableStateListOf<ListEntity>().apply { addAll(lists) } }
+  val manualLists = remember { mutableStateListOf<ListEntity>() }
   val lazyListState = rememberLazyListState()
   val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
     manualLists.add(to.index, manualLists.removeAt(from.index))
   }
 
+  fun persistManualListOrder() {
+    if (sortMode != SortMode.MANUAL || manualLists.isEmpty()) return
+    val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+    if (!needsPersist) return
+    val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
+    viewModel.reorderLists(updated)
+  }
+
   LaunchedEffect(lists, sortMode) {
-    if (sortMode == SortMode.MANUAL) {
+    if (sortMode != SortMode.MANUAL) return@LaunchedEffect
+
+    val upstreamSorted = lists.sortedBy { it.order }
+    val upstreamIds = upstreamSorted.map { it.id }
+    val localIds = manualLists.map { it.id }
+
+    if (manualLists.isEmpty() || upstreamIds.toSet() != localIds.toSet()) {
       manualLists.clear()
-      manualLists.addAll(lists)
+      manualLists.addAll(upstreamSorted)
+      return@LaunchedEffect
+    }
+
+    if (upstreamIds == localIds) {
+      if (manualLists.zip(upstreamSorted).any { it.first != it.second }) {
+        manualLists.clear()
+        manualLists.addAll(upstreamSorted)
+      }
+      return@LaunchedEffect
+    }
+
+    val upstreamById = upstreamSorted.associateBy { it.id }
+    val merged = localIds.mapNotNull { id ->
+      upstreamById[id]
+    }
+
+    if (merged.size == manualLists.size && manualLists.zip(merged).any { it.first != it.second }) {
+      manualLists.clear()
+      manualLists.addAll(merged)
     }
   }
-  LaunchedEffect(sortMode) {
-    snapshotFlow { manualLists.toList() }.collect { ordered ->
-      if (sortMode == SortMode.MANUAL) {
-        val updated = ordered.mapIndexed { index, list -> list.copy(order = index) }
+  LaunchedEffect(sortMode, isManualReorderMode) {
+    if (sortMode != SortMode.MANUAL && isManualReorderMode) {
+      isManualReorderMode = false
+    }
+    if (sortMode != SortMode.MANUAL || !isManualReorderMode) return@LaunchedEffect
+    snapshotFlow { manualLists.map { it.id } }
+      .distinctUntilChanged()
+      .debounce(250)
+      .collect {
+        val needsPersist = manualLists.withIndex().any { (index, list) -> list.order != index }
+        if (!needsPersist) return@collect
+        val updated = manualLists.mapIndexed { index, list -> list.copy(order = index) }
         viewModel.reorderLists(updated)
       }
-    }
   }
 
   NeonScaffold(
@@ -167,25 +213,35 @@ fun HomeScreen(
           .background(NeonCard)
           .clip(RoundedCornerShape(16.dp))
       ) {
-        DropdownMenuItem(
-          text = { Text(strings.sortAZ, color = Color.White) },
+      DropdownMenuItem(
+          text = { Text(strings.sortAZ, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.AZ)
           }
         )
         DropdownMenuItem(
-          text = { Text(strings.sortByCompletion, color = Color.White) },
+          text = { Text(strings.sortByCompletion, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
+            isManualReorderMode = false
             viewModel.setSortMode(SortMode.COMPLETION)
           }
         )
         DropdownMenuItem(
-          text = { Text(strings.manualOrder, color = Color.White) },
+          text = { Text(strings.manualOrder, color = MaterialTheme.colorScheme.onSurface) },
           onClick = {
             sortMenuOpen = false
-            viewModel.setSortMode(SortMode.MANUAL)
+            if (sortMode != SortMode.MANUAL) {
+              viewModel.setSortMode(SortMode.MANUAL)
+            }
+            if (isManualReorderMode) {
+              persistManualListOrder()
+              isManualReorderMode = false
+            } else {
+              isManualReorderMode = true
+            }
           }
         )
       }
@@ -205,7 +261,7 @@ fun HomeScreen(
           .fillMaxSize()
           .padding(bottom = 96.dp)
       ) {
-  if (sortMode == SortMode.MANUAL) {
+  if (sortMode == SortMode.MANUAL && isManualReorderMode) {
     ReorderableLists(
       lists = manualLists,
       items = items,
@@ -223,8 +279,13 @@ fun HomeScreen(
       animatedVisibilityScope = animatedVisibilityScope
     )
         } else {
+          val displayLists = if (sortMode == SortMode.MANUAL && manualLists.isNotEmpty()) {
+            manualLists
+          } else {
+            lists
+          }
           LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
+            itemsIndexed(displayLists, key = { _, list -> list.id }) { index, list ->
               val listItems = items.filter { it.listId == list.id }
               ListCard(
                 list = list,
@@ -318,22 +379,21 @@ private fun ReorderableLists(
     itemsIndexed(lists, key = { _, list -> list.id }) { index, list ->
       ReorderableItem(state = state, key = list.id) { _ ->
         val listItems = items.filter { it.listId == list.id }
-        Box(modifier = Modifier.longPressDraggableHandle()) {
-          ListCard(
-            list = list,
-            itemCount = listItems.size,
-            completedCount = listItems.count { it.isDone },
-            onOpen = { onOpenList(list.id) },
-            onDelete = { onDelete(list) },
-            onEdit = { onEdit(list) },
-            onDuplicate = { onDuplicate(list) },
-            onAddNew = onAddNew,
-            dragHandle = true,
-            entranceDelayMs = index * 50,
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
-          )
-        }
+        ListCard(
+          list = list,
+          itemCount = listItems.size,
+          completedCount = listItems.count { it.isDone },
+          onOpen = { onOpenList(list.id) },
+          onDelete = { onDelete(list) },
+          onEdit = { onEdit(list) },
+          onDuplicate = { onDuplicate(list) },
+          onAddNew = onAddNew,
+          dragHandle = true,
+          dragHandleModifier = Modifier.longPressDraggableHandle(),
+          entranceDelayMs = index * 50,
+          sharedTransitionScope = sharedTransitionScope,
+          animatedVisibilityScope = animatedVisibilityScope
+        )
       }
     }
   }
@@ -350,11 +410,14 @@ private fun ListCard(
   onDuplicate: () -> Unit,
   onAddNew: () -> Unit,
   dragHandle: Boolean = false,
+  dragHandleModifier: Modifier = Modifier,
   entranceDelayMs: Int = 0,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedContentScope
 ) {
   val color = NeonColorMap[list.color] ?: NeonPrimary
+  val primaryTextColor = MaterialTheme.colorScheme.onSurface
+  val isDarkTheme = LocalNeonIsDark.current
   val density = LocalDensity.current
   val delayMillis = entranceDelayMs.coerceAtLeast(0)
   val offsetSpec = tween<IntOffset>(durationMillis = 160, easing = FastOutSlowInEasing)
@@ -500,7 +563,9 @@ private fun ListCard(
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, NeonBorder, RoundedCornerShape(20.dp))
             .padding(horizontal = 18.dp)
-            .shadow(10.dp, RoundedCornerShape(20.dp))
+            .then(
+              if (isDarkTheme) Modifier.shadow(10.dp, RoundedCornerShape(20.dp)) else Modifier
+            )
             .clickable(
               interactionSource = interactionSource,
               indication = null
@@ -508,7 +573,10 @@ private fun ListCard(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
+          Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
             Box(
               modifier = Modifier
                 .width(6.dp)
@@ -519,19 +587,32 @@ private fun ListCard(
             Text(
               list.title,
               style = MaterialTheme.typography.titleLarge,
-              color = Color.White
+              color = primaryTextColor,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
             )
           }
-          Box(
-            modifier = Modifier
-              .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
-              .padding(horizontal = 12.dp, vertical = 6.dp)
-          ) {
-            Text(
-              "${completedCount}/${itemCount}",
-              color = color,
-              style = MaterialTheme.typography.titleMedium
-            )
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .background(color.copy(alpha = 0.16f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+              Text(
+                "${completedCount}/${itemCount}",
+                color = color,
+                style = MaterialTheme.typography.titleMedium
+              )
+            }
+            if (dragHandle) {
+              Spacer(modifier = Modifier.width(8.dp))
+              Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag",
+                tint = NeonMutedForeground,
+                modifier = dragHandleModifier
+              )
+            }
           }
         }
       }
@@ -552,11 +633,13 @@ private fun EditListDialog(
   var color by remember { mutableStateOf(list.color) }
 
   val strings = LocalStrings.current
+  val dialogTextColor = MaterialTheme.colorScheme.onSurface
+  val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
-    textContentColor = Color.White,
+    textContentColor = dialogTextColor,
     title = { Text(strings.editList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
@@ -565,16 +648,16 @@ private fun EditListDialog(
           onValueChange = { title = it },
           label = { Text(strings.title) },
           modifier = Modifier.fillMaxWidth(),
-          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
           colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = NeonPrimary,
             unfocusedBorderColor = NeonMutedForeground,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
+            focusedTextColor = dialogTextColor,
+            unfocusedTextColor = dialogTextColor,
             focusedLabelColor = NeonPrimary,
             unfocusedLabelColor = NeonMutedForeground,
-            focusedPlaceholderColor = NeonMutedForeground,
-            unfocusedPlaceholderColor = NeonMutedForeground,
+            focusedPlaceholderColor = dialogPlaceholderColor,
+            unfocusedPlaceholderColor = dialogPlaceholderColor,
             cursorColor = NeonPrimary
           )
         )
@@ -615,11 +698,13 @@ private fun AddListDialog(
   onSave: () -> Unit
 ) {
   val strings = LocalStrings.current
+  val dialogTextColor = MaterialTheme.colorScheme.onSurface
+  val dialogPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
   androidx.compose.material3.AlertDialog(
     onDismissRequest = onDismiss,
     containerColor = NeonCard,
     titleContentColor = NeonPrimary,
-    textContentColor = Color.White,
+    textContentColor = dialogTextColor,
     title = { Text(strings.newList, style = MaterialTheme.typography.titleLarge) },
     text = {
       Column {
@@ -630,14 +715,14 @@ private fun AddListDialog(
           onValueChange = onTitleChange,
           placeholder = { Text(strings.title.uppercase()) },
           modifier = Modifier.fillMaxWidth(),
-          textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+          textStyle = MaterialTheme.typography.bodyLarge.copy(color = dialogTextColor),
           colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = NeonPrimary,
             unfocusedBorderColor = NeonMutedForeground,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedPlaceholderColor = NeonMutedForeground,
-            unfocusedPlaceholderColor = NeonMutedForeground,
+            focusedTextColor = dialogTextColor,
+            unfocusedTextColor = dialogTextColor,
+            focusedPlaceholderColor = dialogPlaceholderColor,
+            unfocusedPlaceholderColor = dialogPlaceholderColor,
             cursorColor = NeonPrimary
           )
         )

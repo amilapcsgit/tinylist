@@ -3,6 +3,8 @@ package com.cyberlist.neonlist.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +23,23 @@ private val NeonTypography = Typography(
   labelSmall = TextStyle(fontFamily = UiFont, fontWeight = FontWeight.W500, fontSize = 11.sp, letterSpacing = 1.sp),
 )
 
+val LocalNeonIsDark = staticCompositionLocalOf { true }
+
 @Composable
-fun NeonTheme(content: @Composable () -> Unit) {
-  MaterialTheme(
-    colorScheme = neonColorScheme(),
-    typography = NeonTypography,
-    content = content
-  )
+fun NeonTheme(
+  isDark: Boolean,
+  content: @Composable () -> Unit
+) {
+  val palette = if (isDark) DarkPalette else LightPalette
+  val colorScheme = if (isDark) neonDarkColorScheme() else neonLightColorScheme()
+  CompositionLocalProvider(
+    LocalNeonPalette provides palette,
+    LocalNeonIsDark provides isDark
+  ) {
+    MaterialTheme(
+      colorScheme = colorScheme,
+      typography = NeonTypography,
+      content = content
+    )
+  }
 }

@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cyberlist.neonlist.AppViewModel
@@ -77,12 +76,16 @@ fun SearchScreen(
           Row(
             modifier = Modifier
               .fillMaxWidth()
-              .background(Color.White.copy(alpha = 0.04f))
+              .background(MaterialTheme.colorScheme.surfaceVariant)
               .padding(14.dp)
               .clickable { onOpenList(list.id) },
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text(list.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
+            Text(
+              list.title,
+              style = MaterialTheme.typography.titleMedium,
+              color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.weight(1f))
             val color = NeonColorMap[list.color] ?: NeonPrimary
             androidx.compose.foundation.layout.Box(
@@ -105,7 +108,7 @@ fun SearchScreen(
           Column(
             modifier = Modifier
               .fillMaxWidth()
-              .background(Color.White.copy(alpha = 0.04f))
+              .background(MaterialTheme.colorScheme.surfaceVariant)
               .padding(14.dp)
               .clickable { onOpenList(parent.id) }
           ) {
@@ -122,7 +125,7 @@ fun SearchScreen(
             Text(
               item.text,
               style = MaterialTheme.typography.bodyLarge,
-              color = if (item.isDone) NeonMutedForeground else Color.White,
+              color = if (item.isDone) NeonMutedForeground else MaterialTheme.colorScheme.onSurface,
               maxLines = 2,
               overflow = TextOverflow.Ellipsis
             )
