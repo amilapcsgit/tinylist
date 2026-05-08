@@ -4,9 +4,9 @@
 
 # NeonList
 
-**Free. Offline. Yours forever.**
+**Free. Offline. Fast Todo-list with instant totals.**
 
-NeonList is an offline Android list manager built for people who need fast lists, quick numeric totals, and confident local backup without accounts, ads, or cloud dependency.
+NeonList is a free offline Android list manager built for people who need fast to-do lists, quick numeric totals, and confident local JSON backup without accounts, ads, subscriptions, or cloud dependency.
 
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
@@ -16,6 +16,8 @@ NeonList is an offline Android list manager built for people who need fast lists
 
 **Package name:** `com.pcslanka.neonlist`  
 **Status:** Release candidate prepared for Google Play publication
+
+**Keywords:** todo, to-do list, offline to-do app, offline-first Android app, numeric list, list calculator, shopping total, weight total, packing list, local JSON backup
 
 </div>
 
@@ -36,11 +38,12 @@ NeonList is an offline Android list manager built for people who need fast lists
 
 ---
 
+<div align="center">
+
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/NeonList)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com)
 [![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://amilaprasad.it)
 
-*© 2026 L.J. Amila Prasad Perera. All rights reserved. Built with passion.*
+Copyright (c) 2026 L.J. Amila Prasad Perera. All rights reserved.
 
 </div>
 
@@ -48,9 +51,11 @@ NeonList is an offline Android list manager built for people who need fast lists
 
 ## Why NeonList
 
-NeonList is not just another to-do list. It is a small, fast, offline-first utility for managing lists where numbers matter.
+Most to-do apps are slow for real-world counting. They are built around accounts, sync, projects, labels, and workflows when sometimes you just need a fast list that also does the math.
 
-Use it for shopping totals, cash tracking, packing, luggage balancing, quick inventory counts, ideas, tasks, or any list where you want the app to calculate totals while you type naturally.
+NeonList is a small, fast, offline-first to-do list and numeric list calculator for managing lists where numbers matter.
+
+Use it for shopping totals, cash tracking, packing, luggage balancing, quick inventory counts, ideas, tasks, or any list where you want the app to calculate total cost, total weight, total quantity, or selected subtotals while you type naturally.
 
 Example:
 
@@ -60,21 +65,23 @@ PM black bag 27.2 KG
 Carpisa orange 29.2 KG
 ```
 
-NeonList extracts the final number in each item and shows the total instantly. Tap selected items to calculate only those rows.
+NeonList extracts the final number in each item and shows the total instantly. Tap selected items to calculate only those rows, so you can quickly compare costs, weights, quantities, or groups without opening a spreadsheet.
 
 ---
 
 ## ✨ Features
 
-NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpunk UI**, it leverages **Material 3** and **Jetpack Compose** to deliver a fluid, haptic-rich experience.
+NeonList keeps the speed of a simple to-do list and adds the one thing traditional list apps usually miss: instant calculations.
 
-- 💎 **Neon Aesthetics**: High-contrast, vibrant visuals that pop
-- 🌍 **Global Access**: Support for English, Italian, and Sinhala
-- 🛡️ **Zero Trace**: 100% offline-first storage with Room
-- ⚡ **Flow UX**: Gesture-driven interactions for power users
-- 🎯 **Smart Summation**: Auto-extracts numeric values for real-time aggregation
-- 🔄 **Temporal Undo**: Multi-stack history rollback for all data mutations
-
+- **Free to use:** built as a practical offline utility, not a subscription funnel.
+- **Fast to-do lists:** create, edit, complete, duplicate, delete, sort, and search quickly.
+- **List calculator:** auto-extract numeric values for total cost, total weight, total quantity, and quick subtotals.
+- **Selected sums:** tap only the rows you want and see the selected total immediately.
+- **100% offline-first:** local Room/SQLite storage, no login, no internet permission.
+- **Local JSON backup:** export and import plain JSON files through Android's system file picker.
+- **Gesture workflow:** swipe, double tap, and hold-drag actions for fast repeated use.
+- **Multilingual UI:** English, Italian, and Sinhala.
+- **Cyberpunk Material 3 UI:** polished Jetpack Compose interface with dark and light neon themes.
 
 ---
 
@@ -144,10 +151,9 @@ Release builds require the signing keystore values to be supplied through local 
 ---
 
 ### 📊 Architecture Overview
-
+<div align="center">
 <img src="screenshots/architecture_diagram.jpg" alt="Architecture Diagram" width="600"/>
-
----
+</div>
 
 ## Technical Stack
 
@@ -174,6 +180,7 @@ android/
     ui/screens/    Home, list detail, search, settings
     ui/components/ Reusable controls and gesture components
 
+docs/dev/          LLM and developer support notes
 releases/          Versioned APK/AAB release artifacts and notes
 screenshots/       App screenshots and Play Store preview assets
 ```
@@ -209,7 +216,6 @@ screenshots/       App screenshots and Play Store preview assets
 - Keep the app offline-first and simple by default.
 
 ---
-
 
 ## 📄 License
 
@@ -250,6 +256,7 @@ Special thanks to:
 - 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/Neonlist/issues)
 - 🌐 **Website**: [amilaprasad.it](https://amilaprasad.it)
 
+
 ---
 
 <div align="center">
@@ -258,16 +265,13 @@ Special thanks to:
 
 Made with 💜 by **L.J. Amila Prasad Perera** | Powered by Kotlin & Jetpack Compose
 
----
-
-![Made with Love](https://img.shields.io/badge/Made%20with-💜-purple?style=for-the-badge)
+![Made with Care](https://img.shields.io/badge/Made%20with-Care-purple?style=for-the-badge)
 ![Powered by Kotlin](https://img.shields.io/badge/Powered%20by-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Built with Compose](https://img.shields.io/badge/Built%20with-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
 
-
-<div align="center">
-
 **NeonList**  
 Offline lists. Instant totals. Local backup.
-*Optimized by a person with 25 year experiance in IT support for real-world use*
+
+*Optimized by a person with 25 years of IT support experience for real-world use.*
+
 </div>
