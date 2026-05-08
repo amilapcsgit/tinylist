@@ -426,6 +426,20 @@ Representative device proof captured repeatedly:
   - `releases/NeonList-1.5.aab`
     - SHA-256: `A01C2D197F4B386C405DBEB0F67DB089DE53B85C6AA6B747D20FE37147A09C9D`
 
+## NeonList 1.6 closed testing bundle
+- Date: 2026-05-08
+- Purpose:
+  - New Play Console closed testing bundle with a higher `versionCode` so uploaded users can update from the previous AAB.
+- Version bump:
+  - `APP_VERSION_CODE=20`
+  - `APP_VERSION_NAME=1.6`
+- Verification:
+  - `./gradlew :app:bundleRelease` PASS.
+  - Generated release manifest confirms `package=com.pcslanka.neonlist`, `versionCode=20`, `versionName=1.6`.
+- Artifact copied:
+  - `releases/NeonList-1.6.aab`
+    - SHA-256: `BFC4CC8952C54148940803E6CEDF97D1858D5FDECE23A60B8C131274A18007D6`
+
 ## Android Studio launch fix after package ID change
 - Date: 2026-05-07
 - Symptom:
