@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="screenshots/playstore/neonlist-hero.png" alt="NeonList hero image" width="100%"/>
+<img src="screenshots/playstore/neonlist-splash.png" alt="NeonList offline and backup preview" width="42%"/>
 
 # NeonList
 
@@ -23,10 +23,16 @@ NeonList is an offline Android list manager built for people who need fast lists
 
 ## Preview
 
-<p align="center">
-  <img src="screenshots/playstore/neonlist-splash.png" alt="NeonList offline and backup preview" width="32%"/>
-  <img src="screenshots/playstore/neonlist-tutorial.png" alt="NeonList gesture tutorial preview" width="32%"/>
-</p>
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="screenshots/playstore/neonlist-hero.png" alt="NeonList hero image" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <img src="screenshots/playstore/neonlist-tutorial.png" alt="NeonList gesture tutorial preview" width="100%"/>
+    </td>
+  </tr>
+</table>
 
 ---
 
