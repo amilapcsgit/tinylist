@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="screenshots/playstore/neonlist-splash.png" alt="NeonList offline and backup preview" width="42%"/>
+<img src="screenshots/playstore/neonlist-splash.png" alt="NeonList offline and backup preview" width="100%"/>
 
 # NeonList
 
