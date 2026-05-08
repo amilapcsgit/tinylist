@@ -1,7 +1,7 @@
 # 🔍 NeonList Android Application - Code Analysis Report
 
 **Generated:** February 5, 2026  
-**Project:** NeonList (Tinylist-antigravity)  
+**Project:** NeonList  
 **Architecture:** MVVM with Jetpack Compose, Room Database  
 
 ---

@@ -1,17 +1,16 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.cyberlist.neonlist">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application
-    android:name=".NeonListApplication"
+    android:name="com.cyberlist.neonlist.NeonListApplication"
     android:allowBackup="true"
-    android:label="NeonList"
+    android:label="${appLabel}"
     android:icon="@mipmap/ic_launcher"
     android:roundIcon="@mipmap/ic_launcher_round"
     android:supportsRtl="true"
     android:theme="@style/Theme.NeonList">
 
     <activity
-      android:name=".MainActivity"
+      android:name="com.cyberlist.neonlist.MainActivity"
       android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

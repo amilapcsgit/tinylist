@@ -1,27 +1,49 @@
+import java.util.Properties
+
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
   id("org.jetbrains.kotlin.kapt")
   id("org.jetbrains.kotlin.plugin.serialization")
-    id("org.jetbrains.kotlin.plugin.compose")
+  id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val appId = providers.gradleProperty("APP_ID").get()
+val appDisplayName = providers.gradleProperty("APP_DISPLAY_NAME").get()
+val appVersionCode = providers.gradleProperty("APP_VERSION_CODE").get().toInt()
+val appVersionName = providers.gradleProperty("APP_VERSION_NAME").get()
+val releasePropertiesFile = rootProject.file("release.properties")
+val releaseProperties = Properties().apply {
+  if (releasePropertiesFile.isFile) {
+    releasePropertiesFile.inputStream().use(::load)
+  }
+}
+
+fun releaseValue(name: String): String? =
+  (project.findProperty(name) as String?)
+    ?: System.getenv(name)
+    ?: releaseProperties.getProperty(name)
 
 android {
   namespace = "com.cyberlist.neonlist"
   compileSdk = 35
 
   defaultConfig {
-    applicationId = "com.cyberlist.neonlist"
+    applicationId = appId
     minSdk = 29
     targetSdk = 35
-    versionCode = 16
-    versionName = "1.21"
+    versionCode = appVersionCode
+    versionName = appVersionName
+
+    manifestPlaceholders["appLabel"] = appDisplayName
+    resValue("string", "app_name", appDisplayName)
+    buildConfigField("String", "APP_DISPLAY_NAME", "\"$appDisplayName\"")
   }
 
-  val keystorePath = (project.findProperty("KEYSTORE_PATH") as String?) ?: System.getenv("KEYSTORE_PATH")
-  val keystorePassword = (project.findProperty("KEYSTORE_PASSWORD") as String?) ?: System.getenv("KEYSTORE_PASSWORD")
-  val keyAlias = (project.findProperty("KEY_ALIAS") as String?) ?: System.getenv("KEY_ALIAS")
-  val keyPassword = (project.findProperty("KEY_PASSWORD") as String?) ?: System.getenv("KEY_PASSWORD")
+  val keystorePath = releaseValue("KEYSTORE_PATH")
+  val keystorePassword = releaseValue("KEYSTORE_PASSWORD")
+  val keyAlias = releaseValue("KEY_ALIAS")
+  val keyPassword = releaseValue("KEY_PASSWORD")
   val isReleaseSigningConfigured =
     !keystorePath.isNullOrBlank() &&
       !keystorePassword.isNullOrBlank() &&
@@ -63,7 +85,7 @@ android {
     buildConfig = true
   }
 
-    compileOptions {
+  compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
@@ -73,8 +95,8 @@ android {
     freeCompilerArgs += "-Xcontext-receivers"
   }
   dependenciesInfo {
-        includeInApk = true
-    }
+    includeInApk = true
+  }
 }
 
 kapt {

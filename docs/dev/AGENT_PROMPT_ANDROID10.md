@@ -10,7 +10,7 @@ Implement backward compatibility for Android 10 (API 29) in the NeonList Android
 
 ### Step 1: Pull the android10 branch
 ```bash
-cd c:\Users\Amilapcs\source\repos\Tinylist-antigravity\tinylist
+cd c:\Users\Amilapcs\source\repos\NeonList
 git fetch origin
 git checkout android10
 git status
@@ -270,7 +270,7 @@ When you're done, provide:
 
 Start with:
 ```bash
-cd c:\Users\Amilapcs\source\repos\Tinylist-antigravity\tinylist
+cd c:\Users\Amilapcs\source\repos\NeonList
 git checkout android10
 cat TASK_01_GRADLE_MINSDK.md
 ```

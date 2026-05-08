@@ -11,7 +11,7 @@
   - Delete + undo initially exposed a restore-path crash risk during automation; fixed in subsequent commits by deterministic list upsert + transaction-safe delete path.
 
 ## 1) Environment
-- Repo: `tinylist` (NeonList)
+- Repo: `NeonList`
 - Branch: `playconsolerediness`
 - Commit under final verification: `5a17c53`
 - Android Studio: `AI-252.28238.7.2523.14688667` (from `C:\Program Files\Android\Android Studio\product-info.json`)
@@ -59,7 +59,7 @@
 
 ## 4) Evidence
 - Key logcat outcome:
-  - `NO_CRASH_FOUND` for `com.cyberlist.neonlist` during final verification sequence.
+  - `NO_CRASH_FOUND` for `com.pcslanka.neonlist` during final verification sequence.
 - Screenshots captured (not committed):
   - `C:\Users\Amilapcs\source\repos\neonlist-test-artifacts\2026-03-02\ss_home.png`
   - `C:\Users\Amilapcs\source\repos\neonlist-test-artifacts\2026-03-02\ss_settings.png`
@@ -99,8 +99,8 @@
 ### Exact test commands run
 - `./gradlew :app:assembleDebug` (PASS)
 - `./gradlew :app:assembleDebug :app:installDebug` (PASS)
-- `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1` via SDK adb (PASS)
-- `adb shell pidof com.cyberlist.neonlist` (PASS, app process running)
+- `adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1` via SDK adb (PASS)
+- `adb shell pidof com.pcslanka.neonlist` (PASS, app process running)
 - `adb logcat -d | rg "FATAL EXCEPTION|AndroidRuntime: FATAL|Process: com\\.cyberlist\\.neonlist"` (no app crash traces)
 - Attempted strict drag automation for manual reorder:
   - `adb shell input draganddrop 500 780 500 330 1200`
@@ -129,17 +129,17 @@
 
 ### Exact rebuild/install flow used before each test
 1. `./gradlew :app:assembleDebug` (from `android/`)
-2. `adb uninstall com.cyberlist.neonlist` (non-zero ignored when absent)
+2. `adb uninstall com.pcslanka.neonlist` (non-zero ignored when absent)
 3. `./gradlew :app:installDebug`
-4. `adb shell pm path com.cyberlist.neonlist`
-5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-6. `adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+4. `adb shell pm path com.pcslanka.neonlist`
+5. `adb shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+6. `adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`
 
 Automation helper committed:
 - `scripts/fresh-debug-install-check.ps1`
 
 Representative device proof captured repeatedly:
-- `package:/data/app/com.cyberlist.neonlist-.../base.apk`
+- `package:/data/app/com.pcslanka.neonlist-.../base.apk`
 - `versionCode=14 minSdk=29 targetSdk=35`
 - `versionName=1.1`
 
@@ -193,11 +193,11 @@ Representative device proof captured repeatedly:
 
 ### Exact rebuild/install flow used before each test block
 1. From `android/`: `.\gradlew.bat :app:assembleDebug`
-2. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+2. `D:\Projects\Android\platform-tools\adb.exe uninstall com.pcslanka.neonlist`
 3. From `android/`: `.\gradlew.bat :app:installDebug`
-4. `adb shell pm path com.cyberlist.neonlist`
-5. `adb shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-6. Launch app (`adb shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`) or (`adb shell am start -n com.cyberlist.neonlist/.MainActivity`)
+4. `adb shell pm path com.pcslanka.neonlist`
+5. `adb shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+6. Launch app (`adb shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`) or (`adb shell am start -n com.pcslanka.neonlist/com.cyberlist.neonlist.MainActivity`)
 
 ### Installed package proof
 - `versionCode=14 minSdk=29 targetSdk=35`
@@ -262,14 +262,14 @@ Representative device proof captured repeatedly:
 ### Rebuild/install commands used
 1. `cd android`
 2. `./gradlew :app:assembleDebug`
-3. `D:\Projects\Android\platform-tools\adb.exe uninstall com.cyberlist.neonlist`
+3. `D:\Projects\Android\platform-tools\adb.exe uninstall com.pcslanka.neonlist`
 4. `./gradlew :app:installDebug`
-5. `D:\Projects\Android\platform-tools\adb.exe shell pm path com.cyberlist.neonlist`
-6. `D:\Projects\Android\platform-tools\adb.exe shell dumpsys package com.cyberlist.neonlist | Select-String 'versionCode|versionName'`
-7. `D:\Projects\Android\platform-tools\adb.exe shell monkey -p com.cyberlist.neonlist -c android.intent.category.LAUNCHER 1`
+5. `D:\Projects\Android\platform-tools\adb.exe shell pm path com.pcslanka.neonlist`
+6. `D:\Projects\Android\platform-tools\adb.exe shell dumpsys package com.pcslanka.neonlist | Select-String 'versionCode|versionName'`
+7. `D:\Projects\Android\platform-tools\adb.exe shell monkey -p com.pcslanka.neonlist -c android.intent.category.LAUNCHER 1`
 
 ### Installed package proof
-- `package:/data/app/com.cyberlist.neonlist-EUEYRe0TaAyxC0lMAMVSbA==/base.apk`
+- `package:/data/app/com.pcslanka.neonlist-EUEYRe0TaAyxC0lMAMVSbA==/base.apk`
 - `versionCode=15 minSdk=29 targetSdk=35`
 - `versionName=1.2`
 
@@ -299,3 +299,144 @@ Representative device proof captured repeatedly:
 
 ### Remaining issue
 - Manual drag reorder after import was not re-verified in this pass because adb gesture injection remains unreliable for Compose long-press drag interactions; previous branch work already covered reorder behavior separately.
+
+## Screenshot and onboarding audit - Play Store polish pass
+- Date: 2026-05-07
+- Inputs: Functionality screenshot set for NeonList 1.2, README/current analysis docs, current Room/Compose implementation.
+
+### Product read
+- NeonList's strongest differentiator is not basic to-do management. It is a fast offline numeric list tool with gesture shortcuts, selective summation, undo, and manual sorting.
+- The screenshots show the core power flow clearly once known:
+  - tap item: select it for `SELECTED SUM`.
+  - double tap item: mark complete.
+  - swipe right: edit list/item.
+  - swipe left: delete list/item.
+  - hold + drag down: add near the current row.
+  - hold + drag up: duplicate row/list.
+  - menu: A-Z, completion/default/manual order, clear selection, clear completed, duplicate list.
+- The main Play Store risk is discoverability. New users can miss the multi-axis gesture model and numeric extraction, so first-run data must teach through real rows.
+
+### UI refinements applied
+- Home list titles now use a weighted text area with single-line ellipsis, so long tutorial/demo titles cannot push the counter badge off-screen.
+- Item rows now give the text block a weighted area, so long tutorial text cannot crowd done/drag controls.
+
+### Demo data applied for fresh installs
+- Replaced generic starter data with:
+  - `Start Here - NeonList Tour`
+  - `Bag Balance Demo KG`
+  - `Groceries Demo`
+  - `Ideas`
+- The tutorial list explains offline storage, selected sums, double tap completion, edit/delete swipes, add/duplicate long-drag gestures, and sort/cleanup menu actions.
+- The bag demo uses realistic suitcase rows such as `PM blue cabin 23.4 KG` and `Carpisa orange 29.2 KG`, making the bottom total/selective total feature visible immediately.
+- Limit/goal notes avoid ending in digits, because NeonList intentionally extracts the final numeric value in item text for summation.
+
+### Recommended next polish
+- Add a tiny first-run visual cue near the bottom sum bar or first list row only until the first selection, because selected sum is the app's "aha" moment.
+- Add a menu label state such as `Start Manual Reorder` / `Finish Manual Reorder` rather than one static `Manual Order` label.
+- Consider excluding completed items from `TOTAL SUM` only if user testing expects done items to be removed from active calculations. Current behavior counts all numeric rows unless a selection is active, which is useful for luggage totals.
+
+## NeonList 1.3 version bump and release attempt
+- Date: 2026-05-07
+- Version bump:
+  - `APP_VERSION_CODE=17`
+  - `APP_VERSION_NAME=1.3`
+- Wording correction:
+  - Tutorial/demo copy now says `Hold + drag up/down`, because a normal drag scrolls the list.
+  - README gesture table now documents `HOLD_DRAG_UP` and `HOLD_DRAG_DOWN`.
+- Documentation updates:
+  - README latest APK references updated to `NeonList-1.3.apk`.
+  - Play Store release guide version identity updated to `1.3 (17)`.
+  - Added `releases/NeonList-1.3.md`.
+- Verification:
+  - `./gradlew :app:testDebugUnitTest` PASS.
+  - `./gradlew :app:assembleDebug` PASS.
+  - `./gradlew :app:assembleRelease` BLOCKED by signing safety check:
+    - `Release build requires KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD. Refusing to sign with debug.`
+- Release note:
+  - A true release APK was not produced in this pass because signing secrets are not configured in the current environment. This is expected and protects the Play Store release from being built with debug signing.
+
+## NeonList 1.3 signed release build
+- Date: 2026-05-07
+- Signing:
+  - Keystore path: `D:\Projects\Neonlist\KEY\neonlist.keystore`
+  - Alias used: `key0neonlist`
+  - Secrets were supplied through environment variables during the Gradle process and were not written to repo files.
+- Commands:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+- Metadata:
+  - Release APK metadata confirms `versionCode=17`, `versionName=1.3`, `applicationId=com.pcslanka.neonlist`.
+- Artifacts copied:
+  - `releases/NeonList-1.3.apk`
+    - SHA-256: `CA7CCD0BE2CA4CB8F2A75384E4B98DAEACC85A1C73F2386DD41D77DDCC8B0E46`
+  - `releases/NeonList-1.3.aab`
+    - SHA-256: `0DEBA8D29421FFBEE559168EFE25E5519960D945AABE6994518423D250B9C4B3`
+
+## Settings screen S25 Ultra polish pass
+- Date: 2026-05-07
+- Device report:
+  - Galaxy S25 Ultra screenshot shows the Settings screen clipping the Data section at the bottom.
+  - Several Settings labels render too dark against the dark neon card surface.
+- Fix applied:
+  - Settings content now uses vertical scrolling with bottom padding, so Data, stats, credits, and license can never be cut off by viewport height or gesture navigation.
+  - Data import/export controls are now compact full-width tappable action rows instead of tall rows plus separate text buttons.
+  - Settings labels now explicitly use readable `onSurface`/muted/neon colors inside cards.
+  - Section cards and data controls now use restrained 8dp rounding for a more professional settings-list feel.
+- Recommended next UI refinements:
+  - Make manual reorder menu copy stateful: `Start Manual Reorder` / `Done Reordering`.
+  - Add a one-time first-run hint for selected sum, then auto-hide after the first item selection.
+  - Add subtle haptic or snackbar feedback after import/export success.
+  - Add a compact `Data` summary line such as `7 lists / 42 items / offline only`.
+  - Keep Settings utilitarian and scannable; reserve cyberpunk motion/glow for list interactions where it helps the product feel fast.
+
+## NeonList 1.4 Settings icon correction
+- Date: 2026-05-07
+- Device report:
+  - Settings data action rows looked good after the S25 Ultra polish pass, but the import/export arrows were reversed for user expectations.
+- Fix applied:
+  - Export Backup now uses the outward/up upload icon.
+  - Import JSON now uses the inward/down download icon.
+- Version bump:
+  - `APP_VERSION_CODE=18`
+  - `APP_VERSION_NAME=1.4`
+- Verification:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+  - Release APK metadata confirms `versionCode=18`, `versionName=1.4`, `applicationId=com.pcslanka.neonlist`.
+- Artifacts copied:
+  - `releases/NeonList-1.4.apk`
+    - SHA-256: `4682C2014BFA7999AA70C54D7053FF1A443F05BE0C8BA989ACCB3B6AC6539918`
+  - `releases/NeonList-1.4.aab`
+    - SHA-256: `679650AD47177B35577B7F7900EF9F352D1F62D21554B135EA83C2A0AFB9AE77`
+
+## NeonList 1.5 package identity fix
+- Date: 2026-05-07
+- Play Console blocker:
+  - The previous package/app ID was already taken.
+- Fix applied:
+  - Play Store `applicationId` changed to `com.pcslanka.neonlist`.
+  - Internal Android namespace remains `com.cyberlist.neonlist` so existing Kotlin source packages, `R`, and `BuildConfig` imports continue to compile without a large refactor.
+- Version bump:
+  - `APP_VERSION_CODE=19`
+  - `APP_VERSION_NAME=1.5`
+- Verification:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease` PASS.
+  - Release APK metadata confirms `applicationId=com.pcslanka.neonlist`, `versionCode=19`, `versionName=1.5`.
+- Artifacts copied:
+  - `releases/NeonList-1.5.apk`
+    - SHA-256: `06039D5978C7F303B6820723D8FCBF27039B14271DD5A9BB5456A9688FD17DD3`
+  - `releases/NeonList-1.5.aab`
+    - SHA-256: `A01C2D197F4B386C405DBEB0F67DB089DE53B85C6AA6B747D20FE37147A09C9D`
+
+## Android Studio launch fix after package ID change
+- Date: 2026-05-07
+- Symptom:
+  - Android Studio installed the app but failed to launch with:
+    - `Activity class {com.pcslanka.neonlist/com.cyberlist.neonlist.MainActivity} does not exist`
+- Root cause:
+  - The Play Store `applicationId` changed to `com.pcslanka.neonlist`, while Kotlin source classes intentionally remain in `com.cyberlist.neonlist`.
+  - Relative manifest class names such as `.MainActivity` are risky after that split because launch tooling and merged manifest resolution can point at the wrong package/activity pair.
+- Fix applied:
+  - Manifest now uses fully qualified class names:
+    - `android:name="com.cyberlist.neonlist.NeonListApplication"`
+    - `android:name="com.cyberlist.neonlist.MainActivity"`
+- Android Studio note:
+  - If the IDE still tries the old component, edit the Run Configuration to launch the default activity, or delete/recreate the `app` run configuration after Gradle sync.

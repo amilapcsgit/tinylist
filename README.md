@@ -1,48 +1,66 @@
 <div align="center">
 
-<img src="screenshots/neonlist_logo.png" alt="NeonList Logo" width="150" height="150"/>
+<img src="screenshots/playstore/neonlist-splash.png" alt="NeonList offline and backup preview" width="100%"/>
 
 # NeonList
 
-**A high-performance, multilingual list manager with cyberpunk aesthetics**
+**Free. Offline. Yours forever.**
+
+NeonList is an offline Android list manager built for people who need fast lists, quick numeric totals, and confident local backup without accounts, ads, or cloud dependency.
 
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)](LICENSE)
-[![Download TinyList](https://img.shields.io/badge/Download-TinyList_1.1-00C853?style=for-the-badge&logo=android&logoColor=white)](https://github.com/amilapcsgit/tinylist/releases/download/v1.1/NeonList-1.1.apk)
+[![Offline](https://img.shields.io/badge/100%25-Offline-00F5FF?style=for-the-badge)](#privacy--data)
+[![Release](https://img.shields.io/badge/Latest-v1.5-98E650?style=for-the-badge)](https://github.com/amilapcsgit/NeonList/releases/tag/v1.5)
 
-![Stars](https://img.shields.io/badge/⭐_1k+-Stars-9C27B0?style=for-the-badge)
-![Forks](https://img.shields.io/badge/🔱_500+-Forks-00BCD4?style=for-the-badge)
-![Active](https://img.shields.io/badge/🔥_Active-Contributions-FF6B00?style=for-the-badge)
+**Package name:** `com.pcslanka.neonlist`  
+**Status:** Release candidate prepared for Google Play publication
 
----
-
-### 📊 Architecture Overview
-
-<img src="screenshots/architecture_diagram.jpg" alt="Architecture Diagram" width="600"/>
+</div>
 
 ---
 
-### 📑 Table of Contents
+## Preview
 
-→ [Features](#-features)  
-→ [Installation](#-installation)  
-→ [Architecture](#%EF%B8%8F-architecture)  
-→ [Usage](#-usage)  
-→ [Contribution](#-contribution)  
-→ [License](#-license)  
-→ [Contact](#-contact)
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="screenshots/playstore/neonlist-hero.png" alt="NeonList hero image" width="100%"/>
+    </td>
+    <td width="50%" align="center">
+      <img src="screenshots/playstore/neonlist-tutorial.png" alt="NeonList gesture tutorial preview" width="100%"/>
+    </td>
+  </tr>
+</table>
 
 ---
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/tinylist)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/amilapcsgit/NeonList)
 [![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com)
 [![Website](https://img.shields.io/badge/Website-00D9FF?style=for-the-badge&logo=google-chrome&logoColor=white)](https://amilaprasad.it)
 
 *© 2026 L.J. Amila Prasad Perera. All rights reserved. Built with passion.*
 
 </div>
+
+---
+
+## Why NeonList
+
+NeonList is not just another to-do list. It is a small, fast, offline-first utility for managing lists where numbers matter.
+
+Use it for shopping totals, cash tracking, packing, luggage balancing, quick inventory counts, ideas, tasks, or any list where you want the app to calculate totals while you type naturally.
+
+Example:
+
+```text
+PM blue bag 23.4 KG
+PM black bag 27.2 KG
+Carpisa orange 29.2 KG
+```
+
+NeonList extracts the final number in each item and shows the total instantly. Tap selected items to calculate only those rows.
 
 ---
 
@@ -57,112 +75,108 @@ NeonList isn't just a list manager; it's a statement. Designed with a **Cyberpun
 - 🎯 **Smart Summation**: Auto-extracts numeric values for real-time aggregation
 - 🔄 **Temporal Undo**: Multi-stack history rollback for all data mutations
 
----
-
-## 📥 Installation
-
-### System Requirements
-- **Platform**: Android 10+ (API Level 29+)
-- **Development**: Android Studio Hedgehog+
-- **Build**: JDK 17
-
-### Build from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/amilapcsgit/tinylist.git
-
-# Navigate to project directory
-cd tinylist/android
-
-# Build debug APK
-./gradlew :app:assembleDebug
-
-# Or build release APK
-./gradlew :app:assembleRelease
-```
-
-### Download APK
-
-Download the latest release from the [Releases](releases/) page.
-
-- **Latest stable:** `NeonList-1.1.apk` (API 29+)
-- **Release notes:** [`releases/NeonList-1.1.md`](releases/NeonList-1.1.md)
-
-### Install APK (Unknown Sources)
-
-If you install the APK directly (outside Play Store), Android may block it until you allow one-time install permission for the app you downloaded with (browser or file manager).
-
-1. Tap the downloaded `NeonList-1.1.apk`.
-2. If prompted, open **Settings** and enable **Allow from this source** for that installer app.
-3. Go back and tap **Install**.
-4. (Optional) Disable **Allow from this source** again after install.
-
-### Why This Is Safe
-
-- NeonList works offline and does not require account login.
-- The app manifest does not request internet, contacts, location, camera, microphone, or storage permissions.
-- Backup export uses Android's system file picker and writes only to the location you explicitly choose.
-- Download from the official GitHub release asset to avoid tampered APK files.
 
 ---
 
-## 🏗️ Architecture
+## Gesture Guide
 
-NeonList follows the modern **MVVM** pattern with clean architecture principles:
+| Gesture | Action |
+| --- | --- |
+| Tap item | Select for selected sum |
+| Double tap item | Mark done |
+| Swipe right | Edit list or item |
+| Swipe left | Delete list or item |
+| Hold + drag down | Add near the row |
+| Hold + drag up | Duplicate list or item |
+| Manual order mode | Drag handles to reorder |
 
-```
-┌─────────────────────────────────────┐
-│         UI Layer (Compose)          │
-│  HomeScreen │ DetailScreen │ etc.   │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│      Presentation Layer (VM)        │
-│         AppViewModel                │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│        Data Layer (Repo)            │
-│          Repository                 │
-└──────┬──────────────────┬───────────┘
-       │                  │
-┌──────▼──────┐    ┌─────▼──────────┐
-│  Room DB    │    │ SharedPrefs    │
-│  (SQLite)   │    │ (Settings)     │
-└─────────────┘    └────────────────┘
-```
-
-**Key Components:**
-- 🎨 **UI Layer**: Jetpack Compose screens with Material 3
-- 🎭 **Presentation Layer**: ViewModels with StateFlow
-- 💾 **Data Layer**: Repository pattern with Room + SharedPreferences
-
-> [!TIP]
-> For detailed architecture documentation, see [ARCHITECTURE.md](android/ARCHITECTURE.md)
+Normal vertical drag still scrolls. Add and duplicate require **hold + drag**.
 
 ---
 
-## 🚀 Usage
+## Privacy & Data
 
-### Core Gestures
+NeonList is designed to keep your data on your device.
 
-NeonList uses intuitive **cyber-gestures** for power users:
+- No login.
+- No account.
+- No internet permission.
+- No contacts, location, camera, microphone, or storage permission.
+- App data is stored locally with Room/SQLite.
+- Export uses Android's system document picker and writes only to the location you choose.
+- Backup files are plain JSON so you can keep your own copies.
 
-| Gesture | Action | Description |
-|---------|--------|-------------|
-| `SWIPE_LEFT` | **PURGE** | Delete item/list |
-| `SWIPE_RIGHT` | **REWRITE** | Edit item/list |
-| `SWIPE_UP` | **CLONE** | Duplicate item |
-| `SWIPE_DOWN` | **INITIATE** | Create new item |
-| `DOUBLE_TAP` | **EXECUTE** | Mark item as complete |
+---
 
-### Smart Features
+## Download
 
-- **Neural Summation**: Automatically extracts numeric values from items (e.g., "Coffee $4.50") and calculates totals
-- **Temporal Undo**: Undo up to 10 recent actions with smart history tracking
-- **Vector Search**: Real-time search across all lists and items
-- **Dynamic Reordering**: Drag and drop to reorganize lists and items
+NeonList is being prepared for Google Play. Until the Play Store listing is live, release builds are available from GitHub.
+
+- **Latest APK:** [NeonList-1.5.apk](https://github.com/amilapcsgit/NeonList/releases/download/v1.5/NeonList-1.5.apk)
+- **Release notes:** [releases/NeonList-1.5.md](releases/NeonList-1.5.md)
+- **All releases:** [github.com/amilapcsgit/NeonList/releases](https://github.com/amilapcsgit/NeonList/releases)
+
+> Note: APK sideloading may require allowing installs from your browser or file manager. Google Play distribution is the intended public release path.
+
+---
+
+## Build From Source
+
+### Requirements
+
+- Android Studio
+- JDK 17
+- Android SDK 35
+- Android 10+ target device or emulator
+
+### Commands
+
+```powershell
+git clone https://github.com/amilapcsgit/NeonList.git
+cd NeonList/android
+
+.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:testDebugUnitTest
+```
+
+Release builds require the signing keystore values to be supplied through local properties or environment variables. Signing secrets are not stored in this repository.
+
+---
+
+### 📊 Architecture Overview
+
+<img src="screenshots/architecture_diagram.jpg" alt="Architecture Diagram" width="600"/>
+
+---
+
+## Technical Stack
+
+- **Language:** Kotlin
+- **UI:** Jetpack Compose + Material 3
+- **Architecture:** MVVM with StateFlow
+- **Database:** Room / SQLite
+- **Serialization:** Kotlinx Serialization
+- **Minimum Android:** Android 10, API 29
+- **Current app ID:** `com.pcslanka.neonlist`
+- **Internal Kotlin namespace:** `com.cyberlist.neonlist`
+
+Keeping the internal namespace separate from the Play Store app ID avoids unnecessary source-package churn while publishing under the final package name.
+
+---
+
+## Project Structure
+
+```text
+android/
+  app/src/main/java/com/cyberlist/neonlist/
+    data/          Room entities, DAOs, repository, import/export
+    ui/            Compose theme, localization, app navigation
+    ui/screens/    Home, list detail, search, settings
+    ui/components/ Reusable controls and gesture components
+
+releases/          Versioned APK/AAB release artifacts and notes
+screenshots/       App screenshots and Play Store preview assets
+```
 
 ---
 
@@ -187,47 +201,15 @@ NeonList uses intuitive **cyber-gestures** for power users:
 
 ---
 
-## 📚 Documentation
+## Roadmap
 
-Comprehensive code analysis and improvement guides are available:
-
-| Document | Description | Read Time |
-|----------|-------------|-----------|
-| [📋 START_HERE.md](START_HERE.md) | Navigation guide for all documents | 5 min |
-| [📊 README_ANALYSIS.md](README_ANALYSIS.md) | Executive summary & findings | 10 min |
-| [⚡ QUICK_IMPROVEMENTS.md](QUICK_IMPROVEMENTS.md) | Fast-track improvement guide | 15 min |
-| [📖 CODE_ANALYSIS_REPORT.md](CODE_ANALYSIS_REPORT.md) | Complete technical analysis (50+ pages) | 60 min |
-| [✅ IMPROVEMENT_CHECKLIST.md](IMPROVEMENT_CHECKLIST.md) | Progress tracking checklist | 5 min |
-
-**Analysis Highlights:**
-- 🎯 **Code Quality:** 4/5 stars (can reach 5/5 with improvements)
-- 📊 **45 Recommendations** across architecture, testing, security, and performance
-- 🚀 **Expected Gains:** +40% maintainability, +60% test coverage, -30% APK size
+- Publish NeonList on Google Play.
+- Continue polishing onboarding and store screenshots.
+- Add more explicit first-run hints for selected sums and hold-drag gestures.
+- Keep the app offline-first and simple by default.
 
 ---
 
-## 🤝 Contribution
-
-We welcome contributions! Here's how you can help:
-
-1. **Fork the Repository** - Create your own fork
-2. **Create a Branch** - `git checkout -b feature/amazing-feature`
-3. **Commit Changes** - `git commit -m 'Add amazing feature'`
-4. **Push to Branch** - `git push origin feature/amazing-feature`
-5. **Open Pull Request** - Submit your PR for review
-
-### Contribution Guidelines
-
-- Follow Kotlin coding conventions
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-
-Before contributing, please review:
-- [CODE_ANALYSIS_REPORT.md](CODE_ANALYSIS_REPORT.md) for architecture guidelines
-- [IMPROVEMENT_CHECKLIST.md](IMPROVEMENT_CHECKLIST.md) for current priorities
-
----
 
 ## 📄 License
 
@@ -265,7 +247,7 @@ Special thanks to:
 ## 📞 Contact
 
 - 📧 **Email**: [amilapcsgit@gmail.com](mailto:amilapcsgit@gmail.com)
-- 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/tinylist/issues)
+- 💬 **Issues**: [GitHub Issues](https://github.com/amilapcsgit/Neonlist/issues)
 - 🌐 **Website**: [amilaprasad.it](https://amilaprasad.it)
 
 ---
@@ -273,8 +255,6 @@ Special thanks to:
 <div align="center">
 
 ### ⚡ Built with Passion ⚡
-
-**NeonList** - *Optimized for real-world utility with a professional cyberpunk finish*
 
 Made with 💜 by **L.J. Amila Prasad Perera** | Powered by Kotlin & Jetpack Compose
 
@@ -284,6 +264,10 @@ Made with 💜 by **L.J. Amila Prasad Perera** | Powered by Kotlin & Jetpack Com
 ![Powered by Kotlin](https://img.shields.io/badge/Powered%20by-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Built with Compose](https://img.shields.io/badge/Built%20with-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
 
-**Star ⭐ this repository if you find it useful!**
 
+<div align="center">
+
+**NeonList**  
+Offline lists. Instant totals. Local backup.
+*Optimized by a person with 25 year experiance in IT support for real-world use*
 </div>
